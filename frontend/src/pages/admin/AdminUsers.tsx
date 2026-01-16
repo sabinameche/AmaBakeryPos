@@ -12,7 +12,7 @@ import { toast } from "sonner";
 interface UserType {
   id: string;
   name: string;
-  role: 'waiter' | 'kitchen' | 'supervisor' | 'admin';
+  role: 'waiter' | 'kitchen' | 'supervisor' | 'admin' | 'counter';
   pin: string;
 }
 
@@ -21,6 +21,7 @@ const roleIcons = {
   kitchen: ChefHat,
   supervisor: Shield,
   admin: Shield,
+  counter: User,
 };
 
 const roleColors = {
@@ -28,6 +29,7 @@ const roleColors = {
   kitchen: 'bg-warning/10 text-warning',
   supervisor: 'bg-success/10 text-success',
   admin: 'bg-primary/10 text-primary',
+  counter: 'bg-slate-100 text-slate-700',
 };
 
 export default function AdminUsers() {
@@ -83,6 +85,7 @@ export default function AdminUsers() {
                     <SelectItem value="kitchen">Kitchen Staff</SelectItem>
                     <SelectItem value="supervisor">Supervisor</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="counter">Counter</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -126,8 +129,8 @@ export default function AdminUsers() {
       </div>
 
       {/* Role Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {(['waiter', 'kitchen', 'supervisor', 'admin'] as const).map(role => {
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {(['waiter', 'kitchen', 'supervisor', 'admin', 'counter'] as const).map(role => {
           const Icon = roleIcons[role];
           return (
             <div key={role} className="card-elevated p-4 flex items-center gap-3">
