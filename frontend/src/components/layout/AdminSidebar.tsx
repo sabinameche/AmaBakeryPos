@@ -14,12 +14,12 @@ import {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-  { icon: ClipboardList, label: "Orders", path: "/admin/orders" },
-  { icon: UtensilsCrossed, label: "Menu", path: "/admin/menu" },
-  { icon: Package, label: "Inventory", path: "/admin/inventory" },
-  { icon: Users, label: "Users", path: "/admin/users" },
-  { icon: FileBarChart, label: "Reports", path: "/admin/reports" },
-  { icon: Settings, label: "Settings", path: "/admin/settings" },
+  { icon: ClipboardList, label: "Orders", path: "/admin/dashboard/orders" },
+  { icon: UtensilsCrossed, label: "Menu", path: "/admin/dashboard/menu" },
+  { icon: Package, label: "Inventory", path: "/admin/dashboard/inventory" },
+  { icon: Users, label: "Users", path: "/admin/dashboard/users" },
+  { icon: FileBarChart, label: "Reports", path: "/admin/dashboard/reports" },
+  { icon: Settings, label: "Settings", path: "/admin/dashboard/settings" },
 ];
 
 interface AdminSidebarProps {
@@ -46,8 +46,9 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path ||
-            (item.path !== "/admin" && location.pathname.startsWith(item.path));
+          const isActive = item.path === "/admin/dashboard"
+            ? location.pathname === item.path || location.pathname === item.path + "/"
+            : location.pathname.startsWith(item.path);
 
           return (
             <NavLink
