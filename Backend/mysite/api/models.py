@@ -54,10 +54,6 @@ class User(AbstractUser):
 
 
 class Product(models.Model):
-    branch = models.ForeignKey(
-        Branch, on_delete=models.CASCADE, related_name="products"
-    )
-
     uid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -65,13 +61,11 @@ class Product(models.Model):
     product_quantity = models.IntegerField(default=0)
     category = models.ForeignKey(
         ProductCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
         related_name="products",
     )
     low_stock_bar = models.IntegerField(default=0)
     date_added = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ["branch", "name"]
+        unique_together = [ "name"]
