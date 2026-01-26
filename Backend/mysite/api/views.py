@@ -1,17 +1,16 @@
-from .views_dir.product_view import ProductViewClass
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes  # ADD THIS IMPORT
 from rest_framework.response import Response
 
 # custom
 from .serializer_dir.users_serializer import ChangePasswordSerializer
+from .views_dir.product_view import ProductViewClass
 from .views_dir.users_view import UserViewClass
 
 UserView = UserViewClass
 ProductView = ProductViewClass
 
 
-# Optional: Separate password change endpoint (cleaner)
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def change_own_password(request):
