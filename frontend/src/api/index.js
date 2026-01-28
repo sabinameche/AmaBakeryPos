@@ -158,3 +158,76 @@ export async function deleteUser(id) {
   if (!res.ok) throw new Error(data?.message || "Failed to delete user");
   return data;
 }
+
+// Product Management APIs
+export async function fetchProducts() {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + "/api/products/";
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to fetch products");
+  return data.data; // The backend returns {success, data}
+}
+
+export async function createProduct(productData) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + "/api/products/";
+
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || JSON.stringify(data?.errors) || "Failed to create product");
+  return data.data || data.product;
+}
+
+export async function updateProduct(id, productData) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + `/api/products/${id}/`;
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || JSON.stringify(data?.errors) || "Failed to update product");
+  return data.data || data.product;
+}
+
+export async function deleteProduct(id) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + `/api/products/${id}/`;
+
+
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to delete product");
+  return data;
+}
