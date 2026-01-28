@@ -14,7 +14,8 @@ class CategoryViewClass(APIView):
         if id:
             pass
         else:
-            category = ProductCategory.objects.filter(branch=my_branch)
-            serilizer = ProductCategorySerializer(category, many=True)
-            return Response({"success": True, "data": serilizer.data})
+            if role in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER", "WAITER", "COUNTER"]:
+                category = ProductCategory.objects.filter(branch=my_branch)
+                serilizer = ProductCategorySerializer(category, many=True)
+                return Response({"success": True, "data": serilizer.data})
         return Response({"success": False})
