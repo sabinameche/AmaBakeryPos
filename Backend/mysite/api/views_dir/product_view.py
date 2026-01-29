@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-from ..models import Product
+from ..models import Product,ProductCategory
 from ..serializer_dir.product_serializer import ProductSerializer
 
 
