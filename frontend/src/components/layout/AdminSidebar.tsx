@@ -11,8 +11,7 @@ import {
   LogOut,
   ChefHat,
 } from "lucide-react";
-import { branches, User } from "@/lib/mockData";
-import { logout } from "../../auth/auth";
+import { getCurrentUser, logout } from "../../auth/auth";
 
 
 const navItems = [
@@ -35,9 +34,8 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
   const location = useLocation();
 
   // Get current user and branch
-  const storedUser = localStorage.getItem('currentUser');
-  const user: User | null = storedUser ? JSON.parse(storedUser) : null;
-  const branch = branches.find(b => b.id === user?.branchId);
+  const user = getCurrentUser();
+  const branchName = user?.branch_name || "Admin Panel";
 
   return (
     <div className={cn("flex h-full flex-col gradient-espresso text-sidebar-foreground", className)}>
@@ -49,7 +47,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
         <div>
           <h1 className="font-bold text-lg leading-none mb-1">Ama Bakery</h1>
           <p className="text-[10px] text-sidebar-foreground font-black uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-sm inline-block">
-            {branch?.name || "Admin Panel"}
+            {branchName}
           </p>
         </div>
       </div>

@@ -157,9 +157,9 @@ export default function AdminMenu() {
         if (!confirm("Are you sure you want to delete this item?")) return;
 
         try {
-            await deleteProduct(productId);
+            const data = await deleteProduct(productId);
             setProducts(prev => prev.filter(p => p.id !== productId));
-            toast.success("Item deleted");
+            toast.success(data.message || "Item deleted");
         } catch (err: any) {
             toast.error(err.message || "Delete failed");
         }

@@ -141,9 +141,9 @@ export default function AdminInventory() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      await deleteProduct(productId);
+      const data = await deleteProduct(productId);
       setProducts(prev => prev.filter(p => p.id !== productId));
-      toast.success("Product deleted");
+      toast.success(data.message || "Product deleted");
     } catch (err: any) {
       toast.error(err.message || "Delete failed");
     }
