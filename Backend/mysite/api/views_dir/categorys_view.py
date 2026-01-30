@@ -47,7 +47,7 @@ class CategoryViewClass(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-    def put(self, request, id=None):
+    def patch(self, request, id=None):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
