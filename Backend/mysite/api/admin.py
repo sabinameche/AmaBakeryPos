@@ -28,7 +28,12 @@ class BranchAdmin(admin.ModelAdmin):
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        "id",
+        "name",
+    )
+    list_filter = ("name", "id")
+    search_fields = ("name", "branch.name")
 
 
 @admin.register(Product)
