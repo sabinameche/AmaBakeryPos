@@ -1,3 +1,6 @@
 env/
 db.sqlite3
 node_modules/
+Backend/
+reset.sh
+start.sh
