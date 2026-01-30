@@ -22,7 +22,7 @@ import {
     Store
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory, deleteCategory } from "../../api/index.js";
+import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory, deleteCategory, updateCategory } from "../../api/index.js";
 
 interface Product {
     id: number;
@@ -58,6 +58,8 @@ export default function AdminMenu() {
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [newCategoryInput, setNewCategoryInput] = useState("");
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+    const [editingCategoryName, setEditingCategoryName] = useState("");
 
     useEffect(() => {
         loadData();
@@ -175,6 +177,17 @@ export default function AdminMenu() {
             } catch (err: any) {
                 toast.error(err.message || "Failed to add category");
             }
+        }
+    };
+    const handleUpdateCategory = async (id: number) => {
+        if (!editingCategoryName.trim()) return;
+        try {
+            const response = await updateCategory(id, { name: editingCategoryName.trim() });
+            setCategories(prev => prev.map(c => c.id === id ? response.data : c));
+            setEditingCategoryId(null);
+            toast.success(response.message || "Category updated");
+        } catch (err: any) {
+            toast.error(err.message || "Failed to update category");
         }
     };
 
@@ -502,16 +515,46 @@ export default function AdminMenu() {
                             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
                                 {categories.map((category) => (
                                     <div key={category.id} className="grid grid-cols-12 gap-4 items-center p-4 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-200 transition-all rounded-2xl border border-transparent group">
-                                        <div className="col-span-8 font-bold text-slate-700 text-lg">{category.name}</div>
-                                        <div className="col-span-4 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all rounded-xl h-10 w-10"
-                                                onClick={() => handleDeleteCategory(category.id, category.name)}
-                                            >
-                                                <Trash2 className="h-5 w-5" />
-                                            </Button>
+                                        <div className="col-span-8">
+                                            {editingCategoryId === category.id ? (
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={editingCategoryName}
+                                                        onChange={(e) => setEditingCategoryName(e.target.value)}
+                                                        className="h-10 text-lg rounded-xl focus:ring-primary"
+                                                        autoFocus
+                                                    />
+                                                    <Button size="sm" onClick={() => handleUpdateCategory(category.id)} className="h-10 rounded-xl px-4">Save</Button>
+                                                    <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)} className="h-10 rounded-xl px-4">Cancel</Button>
+                                                </div>
+                                            ) : (
+                                                <div className="font-bold text-slate-700 text-lg">{category.name}</div>
+                                            )}
+                                        </div>
+                                        <div className="col-span-4 text-right flex justify-end gap-1">
+                                            {editingCategoryId !== category.id && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-slate-400 hover:text-primary hover:bg-primary/5 opacity-0 group-hover:opacity-100 transition-all rounded-xl h-10 w-10"
+                                                        onClick={() => {
+                                                            setEditingCategoryId(category.id);
+                                                            setEditingCategoryName(category.name);
+                                                        }}
+                                                    >
+                                                        <Pencil className="h-5 w-5" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all rounded-xl h-10 w-10"
+                                                        onClick={() => handleDeleteCategory(category.id, category.name)}
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

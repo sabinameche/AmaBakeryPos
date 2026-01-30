@@ -268,6 +268,24 @@ export async function createCategory(categoryData) {
   return data;
 }
 
+export async function updateCategory(id, categoryData) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + `/api/category/${id}/`;
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(categoryData),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to update category");
+  return data;
+}
+
 export async function deleteCategory(id) {
   const token = localStorage.getItem("access");
   const url = apiBaseUrl + `/api/category/${id}/`;

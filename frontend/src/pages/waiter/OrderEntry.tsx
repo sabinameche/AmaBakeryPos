@@ -4,14 +4,14 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MenuItemCard } from "@/components/waiter/MenuItemCard";
 import { CartItem } from "@/components/waiter/CartItem";
 import { WaiterBottomNav } from "@/components/waiter/WaiterBottomNav";
-import { menuItems, MenuItem } from "@/lib/mockData";
-import { getTableOrder, saveTableOrder } from "@/lib/orderStorage";
+import { MenuItem } from "@/lib/mockData";
+import { saveTableOrder } from "@/lib/orderStorage";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Send, Check, Search, X, Receipt } from "lucide-react";
+import { ShoppingCart, Search, X, Receipt, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchProducts, fetchCategories } from "../../api/index.js";
 
 interface CartItemData {
   item: MenuItem;
@@ -25,27 +25,51 @@ export default function OrderEntry() {
   const [searchParams] = useSearchParams();
   const groupName = searchParams.get('group');
 
-  const [selectedCategory, setSelectedCategory] = useState("Bakery");
+  const [products, setProducts] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItemData[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Load existing order when component mounts - Disabled as requested
-  /*
   useEffect(() => {
-    if (tableNumber) {
-      const existingOrder = getTableOrder(tableNumber, groupName || undefined);
-      if (existingOrder && existingOrder.cart.length > 0) {
-        setCart(existingOrder.cart);
-        toast.info("Existing order loaded", {
-          description: `${existingOrder.cart.length} items in cart`,
-        });
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [productsData, categoriesData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories()
+      ]);
+
+      // Map backend products to MenuItem interface
+      const mappedProducts: MenuItem[] = productsData.map((p: any) => ({
+        id: p.id.toString(),
+        name: p.name,
+        price: parseFloat(p.selling_price),
+        category: p.category_name,
+        available: p.is_available,
+        image: p.image || undefined
+      }));
+
+      setProducts(mappedProducts);
+
+      const categoryNames = categoriesData.map((cat: any) => cat.name).sort();
+      setCategories(categoryNames);
+
+      if (categoryNames.length > 0) {
+        setSelectedCategory(categoryNames[0]);
       }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load menu data");
+    } finally {
+      setLoading(false);
     }
-  }, [tableNumber, groupName]);
-  */
+  };
 
   // Save cart to storage whenever it changes
   useEffect(() => {
@@ -54,13 +78,12 @@ export default function OrderEntry() {
     }
   }, [cart, tableNumber, groupName]);
 
-  const categories = useMemo(() =>
-    [...new Set(menuItems.map(item => item.category))],
-    []
-  );
-
   const filteredItems = useMemo(() => {
-    let items = menuItems.filter(item => item.category === selectedCategory);
+    let items = products;
+
+    if (selectedCategory) {
+      items = items.filter(item => item.category === selectedCategory);
+    }
 
     if (searchQuery.trim()) {
       items = items.filter(item =>
@@ -69,7 +92,7 @@ export default function OrderEntry() {
     }
 
     return items;
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
 
   const cartTotal = useMemo(() =>
     cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0),
@@ -156,18 +179,8 @@ export default function OrderEntry() {
     });
   };
 
-  const continueOrdering = () => {
-    setShowConfirmDialog(false);
-    toast.success("Order sent to kitchen!", {
-      description: "You can continue adding more items.",
-      icon: <Send className="h-5 w-5 text-success" />
-    });
-    // Optional: Reset cart locally if you want "Continue" to mean "Fresh Order for same group"
-    // But usually in POS "Continue" means "Stay on current table view"
-  };
-
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 text-left">
       <MobileHeader
         title={`Table ${tableNumber}${groupName ? ` • ${groupName}` : ''}`}
         showBack
@@ -197,7 +210,7 @@ export default function OrderEntry() {
       </div>
 
       {/* Category Tabs */}
-      <div className="sticky top-[120px] z-40 glass-panel border-b px-4 py-3 overflow-x-auto">
+      <div className="sticky top-[120px] z-40 glass-panel border-b px-4 py-3 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2">
           {categories.map((category) => (
             <Button
@@ -215,7 +228,12 @@ export default function OrderEntry() {
 
       {/* Menu Items */}
       <main className="p-4 space-y-3">
-        {filteredItems.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
+            <p className="text-muted-foreground mt-4 font-medium">Loading menu items...</p>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Search className="h-12 w-12 mb-3 opacity-50" />
             <p className="text-lg font-medium">No products found</p>
@@ -295,9 +313,6 @@ export default function OrderEntry() {
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Confirmation Modal - Added as requested */}
-
 
       {/* Floating Cart Button */}
       {cart.length > 0 && (
