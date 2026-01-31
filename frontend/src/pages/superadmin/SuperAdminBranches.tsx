@@ -20,7 +20,12 @@ interface Branch {
     name: string;
     location: string;
     status?: string;
-    manager?: string;
+    branch_manager?: {
+        id: number;
+        username: string;
+        email: string;
+        total_user: number;
+    } | null;
     revenue?: number;
 }
 
@@ -161,11 +166,11 @@ export default function SuperAdminBranches() {
                                 <div className="flex items-center justify-between text-sm py-3 border-t border-slate-50">
                                     <div>
                                         <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Manager</p>
-                                        <p className="font-semibold text-slate-700">{branch.manager || "N/A"}</p>
+                                        <p className="font-semibold text-slate-700">{branch.branch_manager?.username || "N/A"}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Revenue</p>
-                                        <p className="font-semibold text-slate-700">Rs. {(branch.revenue || 0).toLocaleString()}</p>
+                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Staff Count</p>
+                                        <p className="font-semibold text-slate-700">{branch.branch_manager?.total_user || 0}</p>
                                     </div>
                                 </div>
                             </div>

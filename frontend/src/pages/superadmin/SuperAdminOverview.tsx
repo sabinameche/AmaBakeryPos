@@ -37,9 +37,13 @@ interface Branch {
     name: string;
     location: string;
     status?: string;
-    manager?: string;
+    branch_manager?: {
+        id: number;
+        username: string;
+        email: string;
+        total_user: number;
+    } | null;
     revenue?: number;
-    staffCount?: number;
 }
 
 export default function SuperAdminOverview() {
@@ -93,12 +97,12 @@ export default function SuperAdminOverview() {
     );
 
     const totalRevenue = branches.reduce((sum, b) => sum + (b.revenue || 0), 0);
-    const totalStaff = branches.reduce((sum, b) => sum + (b.staffCount || 0), 0);
+    const totalStaff = branches.reduce((sum, b) => sum + (b.branch_manager?.total_user || 0), 0);
     const activeBranches = branches.filter(b => (b.status || 'active') === 'active').length;
 
     const handleAccessBranch = (branch: Branch) => {
         // Find an admin for this branch in mock data for now, since we don't have a fetchUsersByBranch API yet
-        const branchAdmin = mockUsers.find(u => u.branchId === branch.id && u.role === 'admin');
+        const branchAdmin = mockUsers.find(u => String(u.branchId) === String(branch.id) && u.role === 'admin');
 
         if (branchAdmin) {
             localStorage.setItem('currentUser', JSON.stringify(branchAdmin));
@@ -241,17 +245,13 @@ export default function SuperAdminOverview() {
                                                 {branch.status || 'active'}
                                             </Badge>
                                         </td>
-                                        <td className="px-6 py-5 text-sm font-bold text-slate-600 whitespace-nowrap">{branch.manager || "N/A"}</td>
+                                        <td className="px-6 py-5 text-sm font-bold text-slate-600 whitespace-nowrap">{branch.branch_manager?.username || "N/A"}</td>
                                         <td className="px-6 py-5 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <div className="flex -space-x-1.5 font-bold">
-                                                    {[1, 2, 3].map(i => (
-                                                        <div key={i} className="h-7 w-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">
-                                                            <Users className="h-3 w-3" />
-                                                        </div>
-                                                    ))}
+                                                <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                                                    <Users className="h-4 w-4" />
                                                 </div>
-                                                <span className="text-[10px] font-black text-slate-400">+{Math.max(0, (branch.staffCount || 0) - 3)}</span>
+                                                <span className="text-sm font-bold text-slate-700">{branch.branch_manager?.total_user || 0} Staff</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right whitespace-nowrap">
