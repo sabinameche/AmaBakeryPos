@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-from ..models import Branch, User
+from ..models import Branch, ProductCategory, User
 from ..serializer_dir.branch_serializer import BranchSerializers
 
 
