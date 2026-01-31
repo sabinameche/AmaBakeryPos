@@ -374,15 +374,15 @@ export default function AdminInventory() {
               <div
                 key={product.id}
                 onClick={() => setSelectedProductId(product.id)}
-                className={`p-3 rounded-xl cursor-pointer transition-all ${selectedProductId === product.id ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white hover:bg-slate-50 border-transparent'} border`}
+                className={`p-3 rounded-xl cursor-pointer transition-all ${selectedProductId === product.id ? 'bg-primary shadow-lg scale-[1.02] border-primary' : 'bg-white hover:bg-slate-50 border-transparent'} border`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <h3 className={`font-bold text-sm ${selectedProductId === product.id ? 'text-primary' : 'text-slate-700'}`}>{product.name}</h3>
+                  <h3 className={`font-bold text-sm ${selectedProductId === product.id ? 'text-primary-foreground' : 'text-slate-700'}`}>{product.name}</h3>
                   {product.product_quantity <= product.low_stock_bar && (
-                    <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Low</Badge>
+                    <Badge variant={selectedProductId === product.id ? "secondary" : "destructive"} className="h-5 px-1.5 text-[10px]">Low</Badge>
                   )}
                 </div>
-                <p className={`text-xs ${selectedProductId === product.id ? 'text-primary' : 'text-slate-400'}`}>{product.product_quantity} units</p>
+                <p className={`text-xs ${selectedProductId === product.id ? 'text-primary-foreground/90' : 'text-slate-400'}`}>{product.product_quantity} units</p>
               </div>
             ))
           )}
