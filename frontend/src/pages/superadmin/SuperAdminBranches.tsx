@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, MapPin, Search, Filter, Plus, Trash2, Loader2 } from "lucide-react";
+import { Store, MapPin, Search, Filter, Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { fetchBranches, createBranch, deleteBranch, createUser } from "../../api/index.js";
+import { fetchBranches, createBranch, deleteBranch, createUser, updateBranch } from "../../api/index.js";
 
 interface Branch {
     id: number;
@@ -34,7 +34,9 @@ export default function SuperAdminBranches() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
     const [form, setForm] = useState({
         name: "",
@@ -44,6 +46,11 @@ export default function SuperAdminBranches() {
         manager_full_name: "",
         manager_email: "",
         manager_phone: "",
+    });
+
+    const [editForm, setEditForm] = useState({
+        name: "",
+        location: ""
     });
 
     useEffect(() => {
@@ -131,6 +138,35 @@ export default function SuperAdminBranches() {
         }
     };
 
+    const openEditModal = (branch: Branch) => {
+        setSelectedBranch(branch);
+        setEditForm({
+            name: branch.name,
+            location: branch.location
+        });
+        setIsEditOpen(true);
+    };
+
+    const handleUpdate = async () => {
+        if (!editForm.name || !editForm.location) {
+            toast.error("Please fill all fields");
+            return;
+        }
+        if (!selectedBranch) return;
+
+        setIsSubmitting(true);
+        try {
+            const response = await updateBranch(selectedBranch.id, editForm);
+            toast.success(response.message || "Branch updated successfully");
+            setIsEditOpen(false);
+            loadBranches();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to update branch");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const filteredBranches = branches.filter(b =>
         b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         b.location.toLowerCase().includes(searchQuery.toLowerCase())
@@ -150,7 +186,7 @@ export default function SuperAdminBranches() {
                     className="gradient-warm text-white font-black uppercase tracking-widest text-xs h-10 px-4 rounded-xl"
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    New Location
+                    New Branch
                 </Button>
             </div>
 
@@ -181,7 +217,18 @@ export default function SuperAdminBranches() {
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {filteredBranches.map(branch => (
                             <div key={branch.id} className="group relative bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer">
-                                <div className="absolute top-4 right-4">
+                                <div className="absolute top-4 right-4 flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openEditModal(branch);
+                                        }}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -260,7 +307,7 @@ export default function SuperAdminBranches() {
                                     type="button"
                                     variant="outline"
                                     onClick={() => setForm(p => ({ ...p, showManager: true }))}
-                                    className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all font-bold gap-2"
+                                    className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 text-slate-500 hover:text-white hover:border-primary transition-all font-bold gap-2"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Add New Manager Account
@@ -346,6 +393,56 @@ export default function SuperAdminBranches() {
                             className="h-12 px-8 rounded-xl gradient-warm text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-200"
                         >
                             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Branch"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black text-slate-900">Edit Branch</DialogTitle>
+                        <DialogDescription className="font-medium">
+                            Update branch information.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-name" className="text-sm font-bold uppercase tracking-wider text-slate-500 ml-1">Branch Name</Label>
+                            <Input
+                                id="edit-name"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Ama Bakery - Kathmandu"
+                                className="h-12 rounded-xl border-slate-200 focus:ring-primary shadow-sm"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-location" className="text-sm font-bold uppercase tracking-wider text-slate-500 ml-1">Location Address</Label>
+                            <Input
+                                id="edit-location"
+                                value={editForm.location}
+                                onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                                placeholder="Baneshwor, Kathmandu"
+                                className="h-12 rounded-xl border-slate-200 focus:ring-primary shadow-sm"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsEditOpen(false)}
+                            className="h-12 rounded-xl font-bold"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleUpdate}
+                            disabled={isSubmitting}
+                            className="h-12 px-8 rounded-xl gradient-warm text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-200"
+                        >
+                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Branch"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

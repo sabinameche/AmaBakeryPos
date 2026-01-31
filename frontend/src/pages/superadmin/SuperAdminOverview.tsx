@@ -408,7 +408,7 @@ export default function SuperAdminOverview() {
                                     type="button"
                                     variant="outline"
                                     onClick={() => setForm(p => ({ ...p, showManager: true }))}
-                                    className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all font-bold gap-2"
+                                    className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 text-slate-500 hover:text-white hover:border-primary transition-all font-bold gap-2"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Add New Manager Account

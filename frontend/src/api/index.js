@@ -339,6 +339,24 @@ export async function createBranch(branchData) {
   return data; // Returns {success, message, data}
 }
 
+export async function updateBranch(id, branchData) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + `/api/branch/${id}/`;
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(branchData),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to update branch");
+  return data;
+}
+
 export async function deleteBranch(id) {
   const token = localStorage.getItem("access");
   const url = apiBaseUrl + `/api/branch/${id}/`;
