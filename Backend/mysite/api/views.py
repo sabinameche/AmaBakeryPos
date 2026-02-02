@@ -10,6 +10,7 @@ from .serializer_dir.users_serializer import (
 from .views_dir.branch_view import BranchViewClass
 from .views_dir.categorys_view import CategoryViewClass
 from .views_dir.customer_view import CustomerViewClass
+from .views_dir.order_view import OrderViewClass
 
 # custom
 from .views_dir.product_view import ProductViewClass
@@ -44,3 +45,4 @@ ProductView = ProductViewClass
 CategoryView = CategoryViewClass
 BranchView = BranchViewClass
 CustomerView = CustomerViewClass
+OrderfView = OrderViewClass

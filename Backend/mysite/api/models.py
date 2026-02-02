@@ -90,3 +90,23 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+class Order(models.Model):
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.PROTECT,
+        related_name="branch_order",
+    )
+    uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    order_date = models.DateTimeField(default=timezone.now)
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="orders",
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="created_orders"
+    )
+    notes = models.TextField(blank=True, null=True)
+    invoice_description = models.TextField(blank=True, null=True)
+
