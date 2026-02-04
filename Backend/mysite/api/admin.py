@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Branch, Customer, Product, ProductCategory, User
+from .models import Branch, Customer, Invoice, Product, ProductCategory, User
 
 
 @admin.register(User)
@@ -60,3 +60,42 @@ class CustomerAdmin(admin.ModelAdmin):
     list_filter = ("name", "address", "email")
     search_fields = ["name"]
     ordering = ["name"]
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = [
+        "invoice_number",
+        "customer",
+        "invoice_type",
+        "total_amount",
+        "payment_status",
+        "order_date",
+    ]
+
+    list_filter = ["invoice_type", "payment_status", "invoice_status", "branch"]
+
+    search_fields = ["invoice_number", "customer__name"]
+
+    readonly_fields = ["uid", "subtotal", "tax_amount", "total_amount", "paid_amount"]
+
+    fieldsets = (
+        (
+            "Basic Info",
+            {"fields": ("branch", "customer", "uid", "invoice_number", "invoice_type")},
+        ),
+        ("Dates", {"fields": ("order_date", "created_by")}),
+        (
+            "Financial",
+            {
+                "fields": (
+                    "subtotal",
+                    "tax_amount",
+                    "discount",
+                    "total_amount",
+                    "paid_amount",
+                )
+            },
+        ),
+        ("Status", {"fields": ("payment_status", "invoice_status", "is_active")}),
+    )
