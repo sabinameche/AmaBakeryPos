@@ -481,3 +481,23 @@ export async function fetchInvoices() {
   if (!res.ok) throw new Error(data?.message || "Failed to fetch invoices");
   return data.data; // The backend returns { success: true, data: [...] }
 }
+export async function updateInvoiceStatus(id, status) {
+  const token = localStorage.getItem("access");
+  const url = apiBaseUrl + `/api/invoice/${id}/`;
+
+  console.log("PATCH URL:", url);
+  console.log("PATCH BODY:", { invoice_status: status });
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ invoice_status: status }),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to update invoice status");
+  return data.data;
+}

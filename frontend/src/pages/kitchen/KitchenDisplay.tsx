@@ -7,7 +7,7 @@ import { ChefHat, LogOut, Bell, CheckCircle2, Clock, RotateCcw, MapPin, Utensils
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { logout } from "../../auth/auth";
-import { fetchInvoices, fetchProducts, fetchCategories } from "@/api/index.js";
+import { fetchInvoices, fetchProducts, fetchCategories, updateInvoiceStatus } from "../../api/index.js";
 
 
 export default function KitchenDisplay() {
@@ -34,37 +34,42 @@ export default function KitchenDisplay() {
       setCategories(categoryData);
 
       const productsMap = productData.reduce((acc: any, p: any) => {
-        acc[p.id] = p;
+        acc[String(p.id)] = p;
         return acc;
       }, {});
 
-      const mappedInvoices = invoiceData.map((inv: any) => {
-        // Extract table and group from description "Table 1 - Group A"
-        const tableMatch = inv.invoice_description?.match(/Table (\d+)/);
-        const tableNumber = tableMatch ? parseInt(tableMatch[1]) : 0;
-        const groupName = inv.invoice_description?.split(" - ")[1] || "Sale";
+      const mappedInvoices = invoiceData
+        .filter((inv: any) => inv.is_active && (inv.invoice_status === 'PENDING' || inv.invoice_status === 'READY'))
+        .map((inv: any) => {
+          // Extract table and group from description "Table 1 - Group A"
+          const tableMatch = inv.invoice_description?.match(/Table (\d+)/);
+          const tableNumber = tableMatch ? parseInt(tableMatch[1]) : 0;
+          const groupName = inv.invoice_description?.split(" - ")[1] || "Sale";
 
-        return {
-          id: inv.id.toString(),
-          invoiceNumber: inv.invoice_number,
-          tableNumber,
-          groupName,
-          waiter: inv.created_by_name,
-          createdAt: new Date(inv.order_date),
-          status: inv.payment_status === 'PENDING' ? 'new' :
-            inv.payment_status === 'PARTIAL' ? 'ready' : 'completed',
-          total: parseFloat(inv.total_amount),
-          notes: inv.notes,
-          items: inv.items.map((item: any) => ({
-            quantity: item.quantity,
-            menuItem: {
-              name: productsMap[item.product]?.name || `Product #${item.product}`,
-              category: productsMap[item.product]?.category_name || 'Uncategorized'
-            },
-            notes: item.description // Some backends use description for item-level notes
-          }))
-        };
-      });
+          return {
+            id: inv.id.toString(),
+            invoiceNumber: inv.invoice_number,
+            tableNumber,
+            groupName,
+            waiter: inv.created_by_name,
+            createdAt: new Date(inv.order_date),
+            status: inv.invoice_status === 'PENDING' ? 'new' :
+              inv.invoice_status === 'READY' ? 'ready' : 'completed',
+            total: parseFloat(inv.total_amount),
+            notes: inv.notes,
+            items: inv.items.map((item: any) => {
+              const product = productsMap[String(item.product)];
+              return {
+                quantity: item.quantity,
+                menuItem: {
+                  name: product?.name || `Product #${item.product}`,
+                  category: product?.category_name || 'Uncategorized'
+                },
+                notes: item.description
+              };
+            })
+          };
+        });
 
       setOrders(mappedInvoices);
     } catch (err: any) {
@@ -91,9 +96,10 @@ export default function KitchenDisplay() {
       const itemCat = categories.find(c => c.name === item.menuItem.category);
       const kitchenTarget = isBreakfastKitchen ? 'breakfast' : 'main';
 
-      // If categories are empty (not loaded yet) or item matches kitchen type
-      if (categories.length === 0) return true;
-      return itemCat?.type === kitchenTarget;
+      // If categories are empty or category has no type, default to 'main'
+      const catType = itemCat?.type || 'main';
+
+      return catType === kitchenTarget;
     });
 
     // Return order with ONLY relevant items, or null if no items match
@@ -103,21 +109,26 @@ export default function KitchenDisplay() {
     return null;
   }).filter(Boolean);
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(prev => prev.map(order =>
-      order.id === orderId
-        ? { ...order, status: newStatus }
-        : order
-    ));
+  const handleStatusChange = async (orderId: string, newFrontendStatus: string) => {
+    // Map frontend status to backend status
+    const backendStatusMap: Record<string, string> = {
+      'new': 'PENDING',
+      'ready': 'READY',
+      'completed': 'COMPLETED'
+    };
 
-    if (newStatus === 'ready') {
-      toast.success("Order is ready!", {
-        description: "Moving to Ready column",
-      });
-    } else if (newStatus === 'completed') {
-      toast.success("Order completed!", {
-        description: "Order has been achieved",
-      });
+    const backendStatus = backendStatusMap[newFrontendStatus];
+    console.log(`Updating order ${orderId} to ${backendStatus}`);
+
+    try {
+      await updateInvoiceStatus(orderId, backendStatus);
+      toast.success(`Order updated to ${newFrontendStatus}`);
+
+      // Re-fetch data to be sure
+      await loadData();
+    } catch (err: any) {
+      console.error("Status update error:", err);
+      toast.error(err.message || "Failed to update order status");
     }
   };
 
@@ -127,7 +138,7 @@ export default function KitchenDisplay() {
       <header className="flex-none bg-white border-b px-6 py-4 shadow-sm z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`flex h - 10 w - 10 items - center justify - center rounded - lg ${isBreakfastKitchen ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'} `}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${isBreakfastKitchen ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'}`}>
               {isBreakfastKitchen ? <Utensils className="h-6 w-6" /> : <Coffee className="h-6 w-6" />}
             </div>
             <div>

@@ -69,7 +69,7 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
 
       {/* Items List */}
       <div className="p-3 flex-grow space-y-2">
-        {order.items.map((item, index) => (
+        {order.items?.map((item: any, index: number) => (
           <div key={index} className="flex gap-2 items-start">
             <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-bold mt-0.5">
               {item.quantity}
