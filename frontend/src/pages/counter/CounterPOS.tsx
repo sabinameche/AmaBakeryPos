@@ -39,6 +39,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 
 interface CartItemData {
@@ -56,6 +57,8 @@ export default function CounterPOS() {
     const [selectedCategory, setSelectedCategory] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [cart, setCart] = useState<CartItemData[]>([]);
+    const [taxEnabled, setTaxEnabled] = useState(true);
+    const [taxRate, setTaxRate] = useState(5);
 
     // Billing States
     const [customer, setCustomer] = useState<any>(null);
@@ -147,7 +150,10 @@ export default function CounterPOS() {
         [cart]
     );
 
-    const taxAmount = subtotal * 0.05;
+    const taxAmount = useMemo(() =>
+        taxEnabled ? subtotal * (taxRate / 100) : 0,
+        [subtotal, taxEnabled, taxRate]
+    );
     const total = subtotal + taxAmount;
 
     const addToCart = (item: MenuItem) => {
@@ -447,9 +453,47 @@ export default function CounterPOS() {
                                 <span>Subtotal</span>
                                 <span>Rs.{subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between text-sm font-medium text-slate-500">
-                                <span>Tax (5%)</span>
-                                <span>Rs.{taxAmount.toFixed(2)}</span>
+                            <div className="flex flex-col gap-2 py-2">
+                                <div className="flex justify-between items-center text-sm font-medium text-slate-500">
+                                    <div className="flex items-center gap-2">
+                                        <span>Tax</span>
+                                        <Switch
+                                            checked={taxEnabled}
+                                            onCheckedChange={setTaxEnabled}
+                                            className="scale-75 data-[state=checked]:bg-primary"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center bg-white rounded-lg px-2 border w-20">
+                                            <Input
+                                                type="number"
+                                                value={taxRate}
+                                                onChange={(e) => setTaxRate(Number(e.target.value))}
+                                                className="w-12 h-7 p-0 text-center border-none bg-transparent text-xs font-bold focus-visible:ring-0"
+                                            />
+                                            <span className="text-[10px] font-bold text-slate-400">%</span>
+                                        </div>
+                                        <span className="font-bold text-slate-700">Rs.{taxAmount.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                {taxEnabled && (
+                                    <div className="flex gap-1 justify-end animate-in fade-in slide-in-from-top-1">
+                                        {[5, 10, 15].map((rate) => (
+                                            <button
+                                                key={rate}
+                                                onClick={() => setTaxRate(rate)}
+                                                className={cn(
+                                                    "px-2 py-1 rounded text-[10px] font-bold transition-all",
+                                                    taxRate === rate
+                                                        ? "bg-primary text-white shadow-sm"
+                                                        : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-100"
+                                                )}
+                                            >
+                                                {rate}%
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <Separator />
                             <div className="flex justify-between items-center pt-2">

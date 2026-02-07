@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, Download, Eye, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
-import { fetchInvoices } from "@/api/index.js";
+import { fetchInvoices, fetchProducts } from "@/api/index.js";
 import { toast } from "sonner";
 
 export default function AdminOrders() {
@@ -15,10 +15,25 @@ export default function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [productsMap, setProductsMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadInvoices();
+    loadProducts();
   }, []);
+
+  const loadProducts = async () => {
+    try {
+      const data = await fetchProducts();
+      const map = data.reduce((acc: any, p: any) => {
+        acc[String(p.id)] = p;
+        return acc;
+      }, {});
+      setProductsMap(map);
+    } catch (err) {
+      console.error("Failed to load products for mapping", err);
+    }
+  };
 
   const loadInvoices = async () => {
     setLoading(true);
@@ -176,14 +191,17 @@ export default function AdminOrders() {
               <div className="border-t pt-4">
                 <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-widest">Items</p>
                 <div className="space-y-2">
-                  {selectedOrder.items?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <div className="flex flex-col text-left">
-                        <span className="font-medium">{item.quantity}× Product #{item.product}</span>
+                  {selectedOrder.items?.map((item: any, idx: number) => {
+                    const productName = productsMap[String(item.product)]?.name || `Product #${item.product}`;
+                    return (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <div className="flex flex-col text-left">
+                          <span className="font-medium">{item.quantity}× {productName}</span>
+                        </div>
+                        <span className="font-medium">Rs.{(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</span>
                       </div>
-                      <span className="font-medium">Rs.{(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {(!selectedOrder.items || selectedOrder.items.length === 0) && (
                     <p className="text-xs text-muted-foreground italic">No items recorded</p>
                   )}

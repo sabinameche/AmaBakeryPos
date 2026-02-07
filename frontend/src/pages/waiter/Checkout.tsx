@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import {
     Receipt,
     CheckCircle2,
@@ -58,6 +59,8 @@ export default function Checkout() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentTiming, setPaymentTiming] = useState<PaymentTiming>(null);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+    const [taxEnabled, setTaxEnabled] = useState(true);
+    const [taxRate, setTaxRate] = useState(5);
     const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
     const [showCashModal, setShowCashModal] = useState(false);
     const [cashReceived, setCashReceived] = useState("");
@@ -72,8 +75,10 @@ export default function Checkout() {
         [state?.cart]
     );
 
-    const taxRate = 0.05; // 5% tax
-    const taxAmount = useMemo(() => subtotal * taxRate, [subtotal]);
+    const taxAmount = useMemo(() =>
+        taxEnabled ? subtotal * (taxRate / 100) : 0,
+        [subtotal, taxEnabled, taxRate]
+    );
 
     const discountAmount = useMemo(() =>
         (subtotal * discountPercent) / 100,
@@ -379,8 +384,8 @@ export default function Checkout() {
                                         <span>Subtotal</span>
                                         <span>Rs.{subtotal.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-slate-500 font-medium">
-                                        <span>Tax (5%)</span>
+                                    <div className="flex justify-between items-center text-sm text-slate-500 font-medium">
+                                        <span>Tax ({taxRate}%)</span>
                                         <span>Rs.{taxAmount.toFixed(2)}</span>
                                     </div>
                                     {discountAmount > 0 && (
@@ -486,9 +491,47 @@ export default function Checkout() {
                             <span>Rs.{subtotal.toFixed(2)}</span>
                         </div>
 
-                        <div className="flex justify-between text-muted-foreground">
-                            <span>Tax (5%)</span>
-                            <span>Rs.{taxAmount.toFixed(2)}</span>
+                        <div className="flex flex-col gap-2 py-2 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex justify-between items-center text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <span>Tax</span>
+                                    <Switch
+                                        checked={taxEnabled}
+                                        onCheckedChange={setTaxEnabled}
+                                        className="scale-75 data-[state=checked]:bg-primary"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center bg-white rounded-lg px-2 border w-20">
+                                        <Input
+                                            type="number"
+                                            value={taxRate}
+                                            onChange={(e) => setTaxRate(Number(e.target.value))}
+                                            className="w-12 h-7 p-0 text-center border-none bg-transparent text-xs font-bold focus-visible:ring-0"
+                                        />
+                                        <span className="text-[10px] font-bold text-slate-400">%</span>
+                                    </div>
+                                    <span className="font-bold text-foreground">Rs.{taxAmount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            {taxEnabled && (
+                                <div className="flex gap-1 justify-end">
+                                    {[5, 10, 15].map((rate) => (
+                                        <button
+                                            key={rate}
+                                            onClick={() => setTaxRate(rate)}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm border",
+                                                taxRate === rate
+                                                    ? "bg-primary text-white border-primary"
+                                                    : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
+                                            )}
+                                        >
+                                            {rate}%
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {discountPercent > 0 && (

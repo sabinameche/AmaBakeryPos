@@ -28,7 +28,7 @@ export default function Login() {
         navigate("/waiter/tables", { replace: true });
         break;
       case "COUNTER":
-        navigate("/counter/pos", { replace: true });
+        navigate("/counter/orders", { replace: true });
         break;
       case "KITCHEN":
         navigate("/kitchen/display", { replace: true });

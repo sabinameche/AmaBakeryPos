@@ -55,7 +55,7 @@ const roleRedirectPath = (role?: string) => {
     case "WAITER":
       return "/waiter/tables";
     case "COUNTER":
-      return "/counter/pos";
+      return "/counter/orders";
     case "KITCHEN":
       return "/kitchen/display";
     default:
@@ -212,7 +212,7 @@ const App = () => (
 
           {/* Optional: redirect base role paths */}
           <Route path="/waiter" element={<Navigate to="/waiter/tables" replace />} />
-          <Route path="/counter" element={<Navigate to="/counter/pos" replace />} />
+          <Route path="/counter" element={<Navigate to="/counter/orders" replace />} />
           <Route path="/kitchen" element={<Navigate to="/kitchen/display" replace />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
