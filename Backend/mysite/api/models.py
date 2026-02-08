@@ -96,7 +96,8 @@ class Table(models.Model):
     branch = models.ForeignKey(
         Branch, on_delete=models.CASCADE, related_name="table_branch"
     )
-    is_free = models.BooleanField(default=False)
+    is_free = models.BooleanField(default=True)
+    table_no = models.IntegerField()
 
 
 class Invoice(models.Model):

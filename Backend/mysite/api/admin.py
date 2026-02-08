@@ -2,7 +2,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Branch, Customer, Invoice, Payment, Product, ProductCategory, User
+from .models import (
+    Branch,
+    Customer,
+    Invoice,
+    Payment,
+    Product,
+    ProductCategory,
+    Table,
+    User,
+)
 
 
 @admin.register(User)
@@ -112,4 +121,13 @@ class PaymentAdmin(admin.ModelAdmin):
         "notes",
         "payment_date",
         "received_by",
+    )
+
+
+@admin.register(Table)
+class TableAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "branch",
+        "is_free",
     )
