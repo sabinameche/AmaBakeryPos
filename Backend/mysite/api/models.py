@@ -120,9 +120,7 @@ class Invoice(models.Model):
         ("COMPLETED", "Completed"),
         ("CANCELLED", "Cancelled"),
     ]
-    table = models.ForeignKey(
-        Table, on_delete=models.SET_NULL, null=True, related_name="table"
-    )
+    table_no = models.IntegerField(default=1)
     # Basic Info
     branch = models.ForeignKey(
         Branch, on_delete=models.PROTECT, related_name="invoices"
