@@ -8,7 +8,7 @@ from ..models import Invoice, InvoiceItem
 class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
-        fields = ["product", "description", "quantity", "unit_price", "discount_amount"]
+        fields = ["product", "quantity", "unit_price", "discount_amount"]
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
@@ -23,10 +23,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "branch",
             "customer",
             "invoice_type",
-            "notes",
-            "invoice_description",  # ✅ Add this if it's missing
             "tax_amount",
             "discount",
+            "description",
             "paid_amount",  # ✅ ADD THIS TO THE FIELDS LIST!
             "items",
             "invoice_status",
@@ -86,7 +85,6 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
             "id",
             "invoice_number",
             "invoice_type",
-            "order_date",
             "customer",
             "customer_name",
             "branch",
@@ -94,7 +92,6 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
             "created_by",
             "created_by_name",
             "notes",
-            "invoice_description",
             "subtotal",
             "tax_amount",
             "discount",
@@ -103,6 +100,7 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
             "due_amount",
             "payment_status",
             "is_active",
+            "description",
             "invoice_status",
             "items",
         ]

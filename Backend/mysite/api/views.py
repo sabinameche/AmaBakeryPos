@@ -7,7 +7,7 @@ from .serializer_dir.users_serializer import (
     ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
 )
-from .views_dir import table_view
+from .views_dir import table_view,item_activity_view
 from .views_dir.branch_view import BranchViewClass
 from .views_dir.categorys_view import CategoryViewClass
 from .views_dir.customer_view import CustomerViewClass
@@ -17,6 +17,7 @@ from .views_dir.payment_view import PaymentClassView
 # custom
 from .views_dir.product_view import ProductViewClass
 from .views_dir.users_view import UserViewClass
+from .views_dir.item_activity_view import ItemActivityClassView
 
 
 @api_view(["POST"])
@@ -51,3 +52,4 @@ CustomerView = CustomerViewClass
 InvoiceView = InvoiceViewClass
 PaymentView = PaymentClassView
 TableView = table_view.TableViewClass
+ItemActivityView = item_activity_view.ItemActivityClassView

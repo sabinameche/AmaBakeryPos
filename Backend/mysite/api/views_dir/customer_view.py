@@ -82,7 +82,7 @@ class CustomerViewClass(APIView):
                 )
 
             # Order by date (newest first)
-            customers = customers.order_by("-date")
+            customers = customers.order_by("-created_at")
 
             serializer = CustomerSerializer(customers, many=True)
 

@@ -66,7 +66,7 @@ class Product(models.Model):
         related_name="products",
     )
     low_stock_bar = models.IntegerField(default=0)
-    date_added = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
     is_available = models.BooleanField(default=True)
 
     def __str__(self):
@@ -81,7 +81,7 @@ class Customer(models.Model):
     phone = models.CharField(max_length=15, blank=True)
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     branch = models.ForeignKey(
         Branch,
         on_delete=models.PROTECT,
@@ -104,7 +104,6 @@ class Invoice(models.Model):
     INVOICE_TYPE_CHOICES = [
         ("SALE", "Sales Invoice"),
         ("PURCHASE", "Purchase Invoice"),
-        ("SERVICE", "Service Invoice"),
     ]
 
     PAYMENT_STATUS_CHOICES = [
@@ -120,6 +119,7 @@ class Invoice(models.Model):
         ("COMPLETED", "Completed"),
         ("CANCELLED", "Cancelled"),
     ]
+
     table_no = models.IntegerField(default=1)
     # Basic Info
     branch = models.ForeignKey(
@@ -137,12 +137,12 @@ class Invoice(models.Model):
     invoice_type = models.CharField(
         max_length=10, choices=INVOICE_TYPE_CHOICES, default="SALE"
     )
-    order_date = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_invoices"
     )
     notes = models.TextField(blank=True, null=True)
-    invoice_description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     # Financial Summary (calculated from bills)
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -162,12 +162,12 @@ class Invoice(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ["-order_date"]
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["invoice_number"]),
-            models.Index(fields=["order_date"]),
+            models.Index(fields=["created_at"]),
             models.Index(fields=["payment_status"]),
-            models.Index(fields=["branch", "order_date"]),
+            models.Index(fields=["branch", "created_at"]),
         ]
 
     def __str__(self):
@@ -180,28 +180,17 @@ class Invoice(models.Model):
 
 
 class InvoiceItem(models.Model):
-    ITEM_TYPE_CHOICES = [
-        ("PRODUCT", "Product"),
-        ("SERVICE", "Service"),
-        ("DISCOUNT", "Discount"),
-        ("OTHER", "Other"),
-    ]
-
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="bills")
-    item_type = models.CharField(
-        max_length=10, choices=ITEM_TYPE_CHOICES, default="PRODUCT"
-    )
     product = models.ForeignKey(
         Product, null=True, blank=True, on_delete=models.SET_NULL, related_name="bills"
     )
-    description = models.CharField(max_length=255, blank=True, null=True)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    bill_date = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ["bill_date"]
+        ordering = ["created_at"]
         indexes = [
             models.Index(fields=["invoice"]),
         ]
@@ -209,7 +198,6 @@ class InvoiceItem(models.Model):
     def __str__(self):
         if self.product:
             return f"{self.product.name} x {self.quantity}"
-        return f"{self.description} x {self.quantity}"
 
     @property
     def line_total(self):
@@ -231,6 +219,7 @@ class Payment(models.Model):
     invoice = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name="payments"
     )
+
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     payment_method = models.CharField(
         max_length=20, choices=PAYMENT_METHOD_CHOICES, default="CASH"
@@ -245,7 +234,8 @@ class Payment(models.Model):
     )
 
     notes = models.TextField(blank=True, null=True)
-    payment_date = models.DateTimeField(default=timezone.now)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     received_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="received_payments"
@@ -253,3 +243,27 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.amount} - {self.invoice.invoice_number}"  # models.py
+
+
+class ItemActivity(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    change = models.CharField(max_length=200)
+    quantity = models.IntegerField(default=0)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="to_product",
+    )
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.PROTECT,
+        related_name="to_inovoice",
+        null=True,
+        blank=True,
+    )
+    TYPE_CHOICES = [
+        ("ADD_STOCK", "Add Stock"),
+        ("REDUCE_STOCK", "Reduce Stock"),
+    ]
+    types = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    remarks = models.TextField(blank=True)

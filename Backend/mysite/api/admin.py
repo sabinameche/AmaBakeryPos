@@ -6,6 +6,7 @@ from .models import (
     Branch,
     Customer,
     Invoice,
+    ItemActivity,
     Payment,
     Product,
     ProductCategory,
@@ -58,16 +59,16 @@ class ProductAdmin(admin.ModelAdmin):
         "id",
         "name",
         "product_quantity",
-        "date_added",
+        "created_at",
     )
-    list_filter = ("category", "is_available", "date_added")
+    list_filter = ("category", "is_available", "created_at")
     search_fields = ("name", "category__name")
-    ordering = ("date_added",)
+    ordering = ("created_at",)
 
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "email", "date", "branch")
+    list_display = ("id", "name", "email", "created_at", "branch")
     list_filter = ("name", "address", "email")
     search_fields = ["name"]
     ordering = ["name"]
@@ -82,7 +83,7 @@ class InvoiceAdmin(admin.ModelAdmin):
         "invoice_type",
         "total_amount",
         "payment_status",
-        "order_date",
+        "created_at",
     ]
 
     list_filter = ["invoice_type", "payment_status", "invoice_status", "branch"]
@@ -96,7 +97,7 @@ class InvoiceAdmin(admin.ModelAdmin):
             "Basic Info",
             {"fields": ("branch", "customer", "uid", "invoice_number", "invoice_type")},
         ),
-        ("Dates", {"fields": ("order_date", "created_by")}),
+        ("created_ats", {"fields": ("created_at", "created_by")}),
         (
             "Financial",
             {
@@ -121,7 +122,7 @@ class PaymentAdmin(admin.ModelAdmin):
         "amount",
         "payment_method",
         "notes",
-        "payment_date",
+        "created_at",
         "received_by",
     )
 
@@ -132,3 +133,8 @@ class TableAdmin(admin.ModelAdmin):
 
     # Custom order - branch first, then table_count
     fieldsets = ((None, {"fields": ("branch", "table_count")}),)
+
+
+@admin.register(ItemActivity)
+class ItemActivityAdmin(admin.ModelAdmin):
+    list_display = ("id", "types", "change", "quantity", "remarks", "product")

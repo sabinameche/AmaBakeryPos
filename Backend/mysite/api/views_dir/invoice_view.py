@@ -35,7 +35,7 @@ class InvoiceViewClass(APIView):
                 # Apply branch filter for non-admin users
                 if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
                     invoice = Invoice.objects.get(
-                        branch=my_branch, order_date__date=self.todaydate, id=id
+                        branch=my_branch, created_at__date=self.todaydate, id=id
                     )
                     serializer = InvoiceResponseSerializer(invoice)
                     return Response({"success": True, "data": serializer.data})
@@ -52,18 +52,18 @@ class InvoiceViewClass(APIView):
         else:
             if role in ["COUNTER", "WAITER", "KITCHEN"]:
                 invoices = Invoice.objects.filter(
-                    branch=my_branch, order_date__date=self.todaydate
-                ).order_by("-order_date")
+                    branch=my_branch, created_at__date=self.todaydate
+                ).order_by("-created_at")
 
                 serializer = InvoiceResponseSerializer(invoices, many=True)
                 return Response({"success": True, "data": serializer.data})
 
             if role == "BRANCH_MANAGER":
                 invoices = Invoice.objects.filter(branch=my_branch).order_by(
-                    "-order_date"
+                    "-created_at"
                 )
 
-            invoices = Invoice.objects.all().order_by("-order_date")
+            invoices = Invoice.objects.all().order_by("-created_at")
             serializer = InvoiceResponseSerializer(invoices, many=True)
             return Response({"success": True, "data": serializer.data})
 
@@ -131,7 +131,7 @@ class InvoiceViewClass(APIView):
             )
 
         # Only allow updating safe fields
-        allowed_fields = ["notes", "invoice_description", "is_active", "invoice_status"]
+        allowed_fields = ["notes", "description", "is_active", "invoice_status"]
         if role in ["ADMIN", "SUPER_ADMIN"]:
             allowed_fields.extend(["tax_amount", "discount"])
 

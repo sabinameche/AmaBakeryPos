@@ -63,7 +63,7 @@ class PaymentClassView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            payments = Payment.objects.filter(invoice=invoice).order_by("-payment_date")
+            payments = Payment.objects.filter(invoice=invoice).order_by("-created_at")
             serializer = PaymentSerializer(payments, many=True)
 
             return Response(
@@ -86,16 +86,16 @@ class PaymentClassView(APIView):
             payment_method = request.query_params.get("payment_method")
 
             if start_date:
-                filters["payment_date__date__gte"] = start_date
+                filters["created_at__date__gte"] = start_date
             if end_date:
-                filters["payment_date__date__lte"] = end_date
+                filters["created_at__date__lte"] = end_date
             if payment_method:
                 filters["payment_method"] = payment_method
 
             payments = (
                 Payment.objects.filter(**filters)
                 .select_related("invoice", "received_by", "invoice__branch")
-                .order_by("-payment_date")
+                .order_by("-created_at")
             )
 
             serializer = PaymentSerializer(payments, many=True)

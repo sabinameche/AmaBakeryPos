@@ -7,7 +7,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        fields = ["id", "name", "phone", "email", "address", "date", "branch"]
+        fields = ["id", "name", "phone", "email", "address", "created_at", "branch"]
         extra_kwargs = {
             "name": {"required": True},
             "branch": {"required": True},  

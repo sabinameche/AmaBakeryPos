@@ -21,7 +21,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "category_name",
             "branch_id",  # ← Use this (read-only through category)
             "branch_name",  # ← Use this (read-only through category)
-            "date_added",
+            "created_at",
             "is_available",
         ]
         read_only_fields = [

@@ -1,13 +1,19 @@
+from decimal import Decimal
+
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
 from ..models import Product, ProductCategory
+from ..serializer_dir.item_activity_serializer import ItemActivitySerializer
 from ..serializer_dir.product_serializer import ProductSerializer
 
 
 class ProductViewClass(APIView):
     def get_user_role(self, user):
         return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
+
+    def update_item_activity(action):
+        pass
 
     def get(self, request, id=None):
         role = self.get_user_role(request.user)
@@ -45,11 +51,53 @@ class ProductViewClass(APIView):
                 {"success": False, "message": "User Type not found"}, status=400
             )
 
-    def post(self, request):
+    def post(self, request, product_id=None, action=None):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
-        if role != "BRANCH_MANAGER":
+        if action:
+            if product_id:
+                product = Product.objects.get(id=product_id)
+                data = request.data.copy()
+
+                data["product"] = product_id
+
+                original_qty = product.product_quantity
+
+                if action == "add":
+                    data["quantity"] = original_qty + int(data["change"])
+                    data["types"] = "ADD_STOCK"
+
+                if action == "reduce":
+                    data["quantity"] = original_qty - int(data["change"])
+                    data["types"] = "REDUCE_STOCK"
+
+                serializer = ItemActivitySerializer(data=data)
+
+                if serializer.is_valid():
+                    product.product_quantity = Decimal(
+                        serializer.validated_data["quantity"]
+                    )
+                    product.save()
+                    serializer.save()
+
+                    return Response(
+                        {
+                            "success": True,
+                            "message": "modified product successfully",
+                            "data": serializer.data,
+                        }
+                    )
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Validation error",
+                        "errors": serializer.errors,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,  # Changed from 403 to 400
+                )
+
+        if role not in ["BRANCH_MANAGER", "SUPER_ADMIN", "ADMIN"]:
             return Response(
                 {
                     "success": False,
@@ -61,6 +109,7 @@ class ProductViewClass(APIView):
         # Get and validate product name
         product_name = request.data.get("name", "").strip()
         if not product_name:
+            print("i reach at not product_name if condition!")
             return Response(
                 {
                     "success": False,
@@ -93,7 +142,10 @@ class ProductViewClass(APIView):
 
         # Prepare data
         data = request.data.copy()
-        data["branch"] = my_branch.id
+        if not my_branch:
+            my_branch = data["branch"]
+        if my_branch:
+            data["branch"] = my_branch
 
         # Validate category exists and belongs to user's branch
         category_id = data.get("category")
@@ -129,11 +181,25 @@ class ProductViewClass(APIView):
         if serializer.is_valid():
             try:
                 serializer.save()
+
+                itemactivity = {
+                    "change": serializer.validated_data["product_quantity"],
+                    "quantity": serializer.validated_data["product_quantity"],
+                    "product": serializer.data["id"],
+                    "types": "ADD_STOCK",
+                    "remarks": "Opening Stock",
+                }
+
+                itemserilizer = ItemActivitySerializer(data=itemactivity)
+                if itemserilizer.is_valid():
+                    itemserilizer.save()
+
                 return Response(
                     {
                         "success": True,
                         "message": "Product created successfully",
-                        "data": serializer.data,
+                        "Poduct_data": serializer.data,
+                        "itemactivity_data": itemserilizer.data,
                     },
                     status=status.HTTP_201_CREATED,
                 )
