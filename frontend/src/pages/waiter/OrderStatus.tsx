@@ -32,9 +32,9 @@ export default function OrderStatus() {
     }
   };
 
-  const pendingOrders = orders.filter(o => o.payment_status === 'PENDING');
-  // Backend doesn't have 'ready' status in the shared snippet, assuming payment_status for now or mapping
-  const readyOrders = orders.filter(o => o.payment_status === 'PARTIAL');
+  const pendingOrders = (orders || []).filter(o => o?.payment_status === 'PENDING' || o?.invoice_status === 'PENDING');
+  // Backend might use invoice_status or payment_status, being flexible
+  const readyOrders = (orders || []).filter(o => o?.invoice_status === 'READY' || o?.payment_status === 'PARTIAL');
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -133,24 +133,24 @@ function OrderCard({ order }: { order: any }) {
         isReady && "bg-success/10"
       )}>
         <div className="flex items-center gap-3">
-          <span className="font-bold text-lg">Order #{order.invoice_number.slice(-4)}</span>
+          <span className="font-bold text-lg">Order #{order?.invoice_number ? order.invoice_number.slice(-4) : '????'}</span>
           <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            {order.invoice_description || 'Dine-in'}
+            {order?.invoice_description || 'Dine-in'}
           </span>
         </div>
-        <StatusBadge status={order.payment_status.toLowerCase()} />
+        <StatusBadge status={(order?.invoice_status || order?.payment_status || 'unknown').toLowerCase()} />
       </div>
 
       <div className="p-4">
         <div className="space-y-1 mb-3">
-          {order.items.slice(0, 3).map((item: any, idx: number) => (
+          {(order?.items || []).slice(0, 3).map((item: any, idx: number) => (
             <div key={idx} className="flex justify-between text-sm">
-              <span>{item.quantity}× Product #{item.product}</span>
+              <span>{item?.quantity || 1}× {item?.product_name || `Product #${item?.product}`}</span>
             </div>
           ))}
-          {order.items.length > 3 && (
+          {(order?.items?.length || 0) > 3 && (
             <p className="text-xs text-muted-foreground">
-              +{order.items.length - 3} more items
+              +{(order?.items?.length || 0) - 3} more items
             </p>
           )}
         </div>
@@ -158,10 +158,14 @@ function OrderCard({ order }: { order: any }) {
         <div className="flex items-center justify-between pt-3 border-t">
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
             <Clock className="h-4 w-4" />
-            {formatDistanceToNow(parseISO(order.order_date), { addSuffix: true })}
+            {order?.order_date ? (
+              formatDistanceToNow(parseISO(order.order_date), { addSuffix: true })
+            ) : (
+              'Just now'
+            )}
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-bold text-primary mr-2">Rs.{order.total_amount}</span>
+            <span className="font-bold text-primary mr-2">Rs.{order?.total_amount || 0}</span>
           </div>
         </div>
       </div>
