@@ -3,7 +3,8 @@ from decimal import Decimal
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-from ..models import Product, ProductCategory
+
+from ..models import Product, ProductCategory,ItemActivity
 from ..serializer_dir.item_activity_serializer import ItemActivitySerializer
 from ..serializer_dir.product_serializer import ProductSerializer
 
@@ -21,16 +22,16 @@ class ProductViewClass(APIView):
         if id:
             # get single product
             print("this is role hahaha ", role)
-            if role in ["BRANCH_MANAGER", "WAITER", "COUNTER", "KITCHEN"]:
+            if role in ["SUPER_ADMIN","ADMIN","BRANCH_MANAGER", "WAITER", "COUNTER", "KITCHEN"]:
                 branch_product = Product.objects.get(id=id)
                 if branch_product.category.branch == my_branch:
                     product_details = ProductSerializer(branch_product)
                     return Response({"success": True, "data": product_details.data})
 
-            if role in ["SUPER_ADMIN", "ADMIN"]:
-                product = Product.objects.get(id=id)
-                serilizer = ProductSerializer(product)
-                return Response({"success": True, "data": serilizer.data})
+        if role in ["SUPER_ADMIN", "ADMIN"]:
+            product = Product.objects.get(id=id)
+            serilizer = ProductSerializer(product)
+            return Response({"success": True, "data": serilizer.data})
         else:
             if role in ["BRANCH_MANAGER", "WAITER", "COUNTER", "KITCHEN"] and my_branch:
                 products = Product.objects.filter(category__branch=my_branch)

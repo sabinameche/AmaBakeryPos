@@ -62,6 +62,92 @@ class TableViewClass(APIView):
             serializer = TableSerializer(tables, many=True)
             return Response({"success": True, "data": serializer.data})
 
+    def post(self, request):
+        role = self.get_user_role(request.user)
+        my_branch = request.user.branch
+        comming_branch = request.data.get("branch")
+
+        # 1. Permission check - who can create tables?
+        if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Permission denied",
+                    "message": "You don't have permission to create tables!",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # 2. Prepare data for creation
+        data = request.data.copy()
+
+        # 3. Handle branch assignment based on role
+        if role == "BRANCH_MANAGER":
+            # Branch managers can only create tables for their own branch
+            if not my_branch:
+                return Response(
+                    {"success": False, "message": "No branch assigned"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Force the branch to manager's branch, ignore any provided branch
+            data["branch"] = my_branch.id
+
+        else:  # ADMIN or SUPER_ADMIN
+            # For admin/super_admin, branch is required
+            if not comming_branch:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Branch is required",
+                        "error": "Please specify a branch for the table",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # 4. Check if table number already exists in the same branch
+        table_number = data.get("table_number")
+        branch_id = data.get("branch")
+
+        if table_number and branch_id:
+            existing_table = Table.objects.filter(
+                table_number=table_number, branch_id=branch_id
+            ).first()
+
+            if existing_table:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Table number already exists",
+                        "error": f"Table #{table_number} already exists in this branch",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # 5. Create the table using serializer
+        serializer = TableSerializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "success": True,
+                    "message": "Table created successfully",
+                    "data": serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        # 6. Handle validation errors
+        return Response(
+            {
+                "success": False,
+                "message": "Validation error",
+                "errors": serializer.errors,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     def patch(self, request, table_id):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch

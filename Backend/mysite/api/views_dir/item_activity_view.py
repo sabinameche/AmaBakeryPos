@@ -11,7 +11,7 @@ class ItemActivityClassView(APIView):
     def get_user_role(self, user):
         return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
 
-    def get(self, request, activity_id=None):
+    def get(self, request, activity_id=None, product_id=None, action=None):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
@@ -19,8 +19,13 @@ class ItemActivityClassView(APIView):
             item_activity = ItemActivity.objects.get(id=activity_id)
             serializer = ItemActivitySerializer(item_activity)
         else:
-            item_activity = ItemActivity.objects.all()
-            serializer = ItemActivitySerializer(item_activity, many=True)
+            if product_id:
+                if action == "detail":
+                    item_activity = ItemActivity.objects.filter(product=product_id)
+                    serializer = ItemActivitySerializer(item_activity, many=True)
+            else:
+                item_activity = ItemActivity.objects.all()
+                serializer = ItemActivitySerializer(item_activity, many=True)
         return Response({"success": True, "data": serializer.data})
 
     def post(self, request, action=None, product_id=None):

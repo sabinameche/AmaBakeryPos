@@ -5,8 +5,8 @@ from . import views
 urlpatterns = [
     path("users/", views.UserView.as_view(), name="users_details"),
     path("users/<int:id>/", views.UserView.as_view(), name="users"),
-    path("products/<int:id>/", views.ProductView.as_view(), name="product"),
-    path("products/", views.ProductView.as_view(), name="product_details"),
+    path("product/<int:id>/", views.ProductView.as_view(), name="product"),
+    path("product/", views.ProductView.as_view(), name="product_details"),
     path("category/", views.CategoryViewClass.as_view(), name="Category"),
     path(
         "category/<int:id>/", views.CategoryViewClass.as_view(), name="Category_details"
@@ -28,16 +28,7 @@ urlpatterns = [
     ),
     path("table/", views.TableView.as_view(), name="table-details"),
     path("table/<int:table_id>/", views.TableView.as_view(), name="table-details"),
-    path(
-        "itemactivity/<int:product_id>/<str:action>/",
-        views.ProductView.as_view(),
-    ),  # used to add , reduce stock
-    path(
-        "itemactivity/<int:item_id>/",
-        views.ItemActivityClassView.as_view(),
-        name="activity_detail",
-    ),
-    path(
-        "itemactivity/", views.ItemActivityClassView.as_view(), name="activity_details"
-    ),
+
+    path( "itemactivity/<int:product_id>/<str:action>/", views.ItemActivityView.as_view(),),  # used to add , reduce stock
+    path( "itemactivity/<int:activity_id>/", views.ItemActivityClassView.as_view(), name="activity_detail",),
 ]
