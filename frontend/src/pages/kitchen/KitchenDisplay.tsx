@@ -30,42 +30,44 @@ export default function KitchenDisplay() {
         fetchCategories()
       ]);
 
-      setProducts(productData);
-      setCategories(categoryData);
+      setProducts(productData || []);
+      setCategories(categoryData || []);
 
-      const productsMap = productData.reduce((acc: any, p: any) => {
-        acc[String(p.id)] = p;
+      const productsMap = (productData || []).reduce((acc: any, p: any) => {
+        if (p && p.id) {
+          acc[String(p.id)] = p;
+        }
         return acc;
       }, {});
 
-      const mappedInvoices = invoiceData
-        .filter((inv: any) => inv.is_active && (inv.invoice_status === 'PENDING' || inv.invoice_status === 'READY'))
+      const mappedInvoices = (invoiceData || [])
+        .filter((inv: any) => inv && inv.is_active && (inv.invoice_status === 'PENDING' || inv.invoice_status === 'READY'))
         .map((inv: any) => {
           // Extract table and group from description "Table 1 - Group A"
-          const tableMatch = inv.invoice_description?.match(/Table (\d+)/);
+          const tableMatch = (inv.invoice_description || "").match(/Table (\d+)/);
           const tableNumber = tableMatch ? parseInt(tableMatch[1]) : 0;
-          const groupName = inv.invoice_description?.split(" - ")[1] || "Sale";
+          const groupName = (inv.invoice_description || "").split(" - ")[1] || "Sale";
 
           return {
-            id: inv.id.toString(),
-            invoiceNumber: inv.invoice_number,
+            id: (inv.id || "").toString(),
+            invoiceNumber: inv.invoice_number || "N/A",
             tableNumber,
             groupName,
-            waiter: inv.created_by_name,
-            createdAt: new Date(inv.order_date),
+            waiter: inv.created_by_name || "Unknown",
+            createdAt: inv.order_date ? new Date(inv.order_date) : new Date(),
             status: inv.invoice_status === 'PENDING' ? 'new' :
               inv.invoice_status === 'READY' ? 'ready' : 'completed',
-            total: parseFloat(inv.total_amount),
-            notes: inv.notes,
-            items: inv.items.map((item: any) => {
+            total: parseFloat(inv.total_amount || "0"),
+            notes: inv.notes || "",
+            items: (inv.items || []).map((item: any) => {
               const product = productsMap[String(item.product)];
               return {
-                quantity: item.quantity,
+                quantity: item.quantity || 0,
                 menuItem: {
                   name: product?.name || `Product #${item.product}`,
                   category: product?.category_name || 'Uncategorized'
                 },
-                notes: item.description
+                notes: item.description || ""
               };
             })
           };
@@ -89,11 +91,15 @@ export default function KitchenDisplay() {
   const isBreakfastKitchen = kitchenType === 'breakfast';
 
   // Filter Orders Logic
-  const filteredOrders = orders.map(order => {
+  const filteredOrders = (orders || []).map(order => {
+    if (!order || !order.items) return null;
+
     // Filter items based on category
     const relevantItems = order.items.filter((item: any) => {
+      if (!item || !item.menuItem) return false;
+
       // Find the category object for this item
-      const itemCat = categories.find(c => c.name === item.menuItem.category);
+      const itemCat = (categories || []).find(c => c && c.name === item.menuItem.category);
       const kitchenTarget = isBreakfastKitchen ? 'breakfast' : 'main';
 
       // If categories are empty or category has no type, default to 'main'
