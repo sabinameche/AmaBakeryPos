@@ -28,8 +28,16 @@ urlpatterns = [
     ),
     path("table/", views.TableView.as_view(), name="table-details"),
     path("table/<int:table_id>/", views.TableView.as_view(), name="table-details"),
-
-    path( "itemactivity/<int:product_id>/<str:action>/", views.ProductView.as_view(),), # used to add , reduce stock
-    path( "itemactivity/<int:item_id>/", views.ItemActivityClassView.as_view(), name="activity_detail",),
-    path( "itemactivity/", views.ItemActivityClassView.as_view(), name="activity_details"),
+    path(
+        "itemactivity/<int:product_id>/<str:action>/",
+        views.ProductView.as_view(),
+    ),  # used to add , reduce stock
+    path(
+        "itemactivity/<int:item_id>/",
+        views.ItemActivityClassView.as_view(),
+        name="activity_detail",
+    ),
+    path(
+        "itemactivity/", views.ItemActivityClassView.as_view(), name="activity_details"
+    ),
 ]

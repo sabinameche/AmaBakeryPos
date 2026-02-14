@@ -55,48 +55,6 @@ class ProductViewClass(APIView):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
-        if action:
-            if product_id:
-                product = Product.objects.get(id=product_id)
-                data = request.data.copy()
-
-                data["product"] = product_id
-
-                original_qty = product.product_quantity
-
-                if action == "add":
-                    data["quantity"] = original_qty + int(data["change"])
-                    data["types"] = "ADD_STOCK"
-
-                if action == "reduce":
-                    data["quantity"] = original_qty - int(data["change"])
-                    data["types"] = "REDUCE_STOCK"
-
-                serializer = ItemActivitySerializer(data=data)
-
-                if serializer.is_valid():
-                    product.product_quantity = Decimal(
-                        serializer.validated_data["quantity"]
-                    )
-                    product.save()
-                    serializer.save()
-
-                    return Response(
-                        {
-                            "success": True,
-                            "message": "modified product successfully",
-                            "data": serializer.data,
-                        }
-                    )
-                return Response(
-                    {
-                        "success": False,
-                        "message": "Validation error",
-                        "errors": serializer.errors,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,  # Changed from 403 to 400
-                )
-
         if role not in ["BRANCH_MANAGER", "SUPER_ADMIN", "ADMIN"]:
             return Response(
                 {

@@ -1,7 +1,9 @@
+from decimal import Decimal
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import ItemActivity
+from ..models import ItemActivity, Product
 from ..serializer_dir.item_activity_serializer import ItemActivitySerializer
 
 
@@ -21,8 +23,51 @@ class ItemActivityClassView(APIView):
             serializer = ItemActivitySerializer(item_activity, many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def post(self, request):
-        pass
+    def post(self, request, action=None, product_id=None):
+        role = self.get_user_role(request.user)
+        my_branch = request.user.branch
+
+        if action:
+            if product_id:
+                product = Product.objects.get(id=product_id)
+                data = request.data.copy()
+
+                data["product"] = product_id
+
+                original_qty = product.product_quantity
+
+                if action == "add":
+                    data["quantity"] = original_qty + int(data["change"])
+                    data["types"] = "ADD_STOCK"
+
+                if action == "reduce":
+                    data["quantity"] = original_qty - int(data["change"])
+                    data["types"] = "REDUCE_STOCK"
+
+                serializer = ItemActivitySerializer(data=data)
+
+                if serializer.is_valid():
+                    product.product_quantity = Decimal(
+                        serializer.validated_data["quantity"]
+                    )
+                    product.save()
+                    serializer.save()
+
+                    return Response(
+                        {
+                            "success": True,
+                            "message": "modified product successfully",
+                            "data": serializer.data,
+                        }
+                    )
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Validation error",
+                        "errors": serializer.errors,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,  # Changed from 403 to 400
+                )
 
     def patch(self, request, item_id):
         role = self.get_user_role(request.user)
