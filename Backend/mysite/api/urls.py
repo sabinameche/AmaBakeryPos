@@ -1,8 +1,9 @@
-from django.urls import path
+from django.urls import path,include
 
 from . import views
 
 urlpatterns = [
+    path("calculate/", include("api.calculate_urls")),
     path("users/", views.UserView.as_view(), name="users_details"),
     path("users/<int:id>/", views.UserView.as_view(), name="users"),
     path("products/<int:id>/", views.ProductView.as_view(), name="product"),
@@ -37,4 +38,5 @@ urlpatterns = [
         views.ItemActivityView.as_view(),
         name="activity_detail",
     ),
+    
 ]

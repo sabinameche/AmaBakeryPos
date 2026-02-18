@@ -12,6 +12,7 @@ from .models import (
     Product,
     ProductCategory,
     User,
+    InvoiceItem,
 )
 
 
@@ -83,6 +84,7 @@ class InvoiceAdmin(admin.ModelAdmin):
         "invoice_type",
         "total_amount",
         "payment_status",
+        "total_amount",
         "created_at",
         "floor",
     ]
@@ -123,6 +125,13 @@ class InvoiceAdmin(admin.ModelAdmin):
         ("Status", {"fields": ("payment_status", "invoice_status", "is_active")}),
     )
 
+@admin.register(InvoiceItem)
+class InvoiceItemAdmin(admin.ModelAdmin):
+    list_display =(
+        "id",
+        "product",
+        "quantity"
+    )
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):

@@ -148,11 +148,11 @@ class Invoice(models.Model):
     description = models.TextField(blank=True, null=True)
 
     # Financial Summary (calculated from bills)
-    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    paid_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     # Status
     payment_status = models.CharField(
@@ -200,7 +200,8 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         if self.product:
-            return f"{self.product.name} x {self.quantity}"
+            return f"{self.quantity}"
+        return "No Product"
 
     @property
     def line_total(self):
@@ -223,7 +224,7 @@ class Payment(models.Model):
         Invoice, on_delete=models.CASCADE, related_name="payments"
     )
 
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(
         max_length=20, choices=PAYMENT_METHOD_CHOICES, default="CASH"
     )
@@ -267,6 +268,7 @@ class ItemActivity(models.Model):
     TYPE_CHOICES = [
         ("ADD_STOCK", "Add Stock"),
         ("REDUCE_STOCK", "Reduce Stock"),
+        ("EDIT_STOCK","Edit Stock")
     ]
     types = models.CharField(max_length=50, choices=TYPE_CHOICES)
     remarks = models.TextField(blank=True)

@@ -23,7 +23,7 @@ class ItemActivityClassView(APIView):
         else:
             if product_id:
                 if action == "detail":
-                    item_activity = ItemActivity.objects.filter(product=product_id)
+                    item_activity = ItemActivity.objects.filter(product=product_id).order_by('-created_at')
                     serializer = ItemActivitySerializer(item_activity, many=True)
             else:
                 item_activity = ItemActivity.objects.all()

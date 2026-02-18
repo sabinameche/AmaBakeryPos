@@ -11,4 +11,5 @@ urlpatterns = [
     ),  # Fixed: added closing quote
     path("api-auth/", include("rest_framework.urls")),
     path("api/", include("api.urls")),
+  
 ]

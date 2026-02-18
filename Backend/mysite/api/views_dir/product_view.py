@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-from ..models import Product, ProductCategory
+from ..models import Product, ProductCategory,ItemActivity
 from ..serializer_dir.item_activity_serializer import ItemActivitySerializer
 from ..serializer_dir.product_serializer import ProductSerializer
 from django.shortcuts import get_object_or_404
@@ -297,6 +297,17 @@ class ProductViewClass(APIView):
 
         if serializer.is_valid():
             updated_product = serializer.save()
+            itemactivity = {
+                        "change": updated_product.product_quantity,
+                        "quantity": updated_product.product_quantity,
+                        "product": updated_product.id,
+                        "types": "EDIT_STOCK",
+                        "remarks": "Edit Stock",
+                    }
+
+            itemserializer = ItemActivitySerializer(data=itemactivity)
+            if itemserializer.is_valid():
+                    itemserializer.save()
 
             # Get new data for audit
             new_data = {
@@ -324,6 +335,7 @@ class ProductViewClass(APIView):
                     "message": "Product updated successfully",
                     "data": serializer.data,
                     "changes": {"old": old_data, "new": new_data},
+                    "item_activity":itemserializer.data
                 },
                 status=status.HTTP_200_OK,
             )
@@ -362,21 +374,28 @@ class ProductViewClass(APIView):
                 product = Product.objects.get(id=id, category__branch=my_branch)
 
             product_name = product.name
-            try:
-                product.delete()
-            except Exception:
+            activity = product.to_product.all()
+    
+            if activity.count() == 1 and activity.filter(remarks = "Opening Stock").exists(): 
+                with transaction.atomic():       
+                    activity.delete()
+                    product.delete()
+
                 return Response(
+                        {
+                            "success": True,
+                            "message": f"Product '{product_name}' deleted successfully.",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+        
+            
+            return Response(
                 {"success": False, "message": "Cannot delete product."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-            return Response(
-                {
-                    "success": True,
-                    "message": f"Product '{product_name}' deleted successfully.",
-                },
-                status=status.HTTP_200_OK,
-            )
+            
 
         except Product.DoesNotExist:
             return Response(
