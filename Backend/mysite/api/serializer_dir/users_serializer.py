@@ -1,25 +1,25 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from ..models import User
 
+from ..models import User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        
+
         # Add custom claims
-        token['username'] = user.username
-        token['user_type'] = getattr(user, 'user_type', '')
-        token['is_superuser'] = user.is_superuser
-        token['is_staff'] = user.is_staff
-        
+        token["username"] = user.username
+        token["user_type"] = getattr(user, "user_type", "")
+        token["is_superuser"] = user.is_superuser
+        token["is_staff"] = user.is_staff
+
         # Add branch info if exists
-        if hasattr(user, 'branch') and user.branch:
-            token['branch_id'] = user.branch.id
-            token['branch_name'] = user.branch.name
-        
+        if hasattr(user, "branch") and user.branch:
+            token["branch_id"] = user.branch.id
+            token["branch_name"] = user.branch.name
+
         return token
 
 

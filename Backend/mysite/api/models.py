@@ -93,10 +93,11 @@ class Customer(models.Model):
         return f"{self.name}"
 
 
-class Table(models.Model):
-    branch = models.OneToOneField(
-        Branch, on_delete=models.CASCADE, related_name="table_branch"
+class Floor(models.Model):
+    branch = models.ForeignKey(
+        Branch, on_delete=models.CASCADE, related_name="floor_branch"
     )
+    name = models.CharField(max_length=25, blank=False, unique=True)
     table_count = models.IntegerField(default=1)
 
 
@@ -142,6 +143,7 @@ class Invoice(models.Model):
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_invoices"
     )
+    floor = models.ForeignKey(Floor,on_delete=models.SET_NULL,null=True,related_name="floor_invoices")
     notes = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 

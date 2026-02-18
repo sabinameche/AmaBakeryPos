@@ -1,10 +1,7 @@
-from decimal import Decimal
-
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-
-from ..models import Product, ProductCategory,ItemActivity
+from ..models import Product, ProductCategory
 from ..serializer_dir.item_activity_serializer import ItemActivitySerializer
 from ..serializer_dir.product_serializer import ProductSerializer
 from django.shortcuts import get_object_or_404
@@ -41,8 +38,18 @@ class ProductViewClass(APIView):
 
             if role in ["ADMIN", "SUPER_ADMIN"]:
                 products = Product.objects.all()
-                serilizer = ProductSerializer(products, many=True)
-                return Response({"success": True, "data": serilizer.data})
+
+
+            # products = Product.objects.raw("select * from api_Product")
+            #
+            # table_name = Product._meta.db_table
+            # print(f"Using table: {table_name}")  # Debug output
+            #
+            # for pro in products:
+            #     print(pro)
+            #
+            # serilizer = ProductSerializer(products, many=True)
+            # return Response({"success": True, "data": serilizer.data})
 
             if not my_branch:
                 return Response(
