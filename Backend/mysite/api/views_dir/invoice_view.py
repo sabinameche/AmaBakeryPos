@@ -83,6 +83,7 @@ class InvoiceViewClass(APIView):
         serializer = InvoiceSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
+            print("yy")
             try:
                 invoice = serializer.save()
                 response_serializer = InvoiceResponseSerializer(invoice)
@@ -91,6 +92,7 @@ class InvoiceViewClass(APIView):
                     status=status.HTTP_201_CREATED,  # ✅ Use status constants
                 )
             except Exception as e:
+                print("except:::::")
                 return Response(
                     {"success": False, "error": str(e)},
                     status=status.HTTP_400_BAD_REQUEST,  # ✅ Use status constants

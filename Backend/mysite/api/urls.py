@@ -26,15 +26,15 @@ urlpatterns = [
     path(
         "payments/<int:payment_id>/", views.PaymentView.as_view(), name="payment-detail"
     ),
-    path("table/", views.TableView.as_view(), name="table-details"),
-    path("table/<int:table_id>/", views.TableView.as_view(), name="table-details"),
+    path("table/", views.FloorView.as_view(), name="table-details"),
+    path("table/<int:floor_id>/", views.FloorView.as_view(), name="table-details"),
     path(
         "itemactivity/<int:product_id>/<str:action>/",
         views.ItemActivityView.as_view(),
     ),  # used to add , reduce stock
     path(
         "itemactivity/<int:activity_id>/",
-        views.ItemActivityClassView.as_view(),
+        views.ItemActivityView.as_view(),
         name="activity_detail",
     ),
 ]

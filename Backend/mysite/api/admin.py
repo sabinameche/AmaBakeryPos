@@ -5,12 +5,12 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (
     Branch,
     Customer,
+    Floor,
     Invoice,
     ItemActivity,
     Payment,
     Product,
     ProductCategory,
-    Table,
     User,
 )
 
@@ -84,6 +84,7 @@ class InvoiceAdmin(admin.ModelAdmin):
         "total_amount",
         "payment_status",
         "created_at",
+        "floor",
     ]
 
     list_filter = ["invoice_type", "payment_status", "invoice_status", "branch"]
@@ -95,7 +96,16 @@ class InvoiceAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "Basic Info",
-            {"fields": ("branch", "customer", "uid", "invoice_number", "invoice_type")},
+            {
+                "fields": (
+                    "branch",
+                    "floor",
+                    "customer",
+                    "uid",
+                    "invoice_number",
+                    "invoice_type",
+                )
+            },
         ),
         ("created_ats", {"fields": ("created_at", "created_by")}),
         (
@@ -127,12 +137,12 @@ class PaymentAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Table)
-class TableAdmin(admin.ModelAdmin):
-    list_display = ("id", "branch", "table_count")
+@admin.register(Floor)
+class FloorAdmin(admin.ModelAdmin):
+    list_display = ("id", "branch", "name", "table_count")
 
     # Custom order - branch first, then table_count
-    fieldsets = ((None, {"fields": ("branch", "table_count")}),)
+    # fieldsets = ((None, {"fields": ("branch", "table_count")}),)
 
 
 @admin.register(ItemActivity)

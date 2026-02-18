@@ -17,6 +17,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         max_digits=15, decimal_places=2, required=False, default=0, min_value=0
     )
 
+
     class Meta:
         model = Invoice
         fields = [
@@ -29,6 +30,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "paid_amount",  # ✅ ADD THIS TO THE FIELDS LIST!
             "items",
             "invoice_status",
+            "floor",
         ]
 
     def create(self, validated_data):
@@ -45,6 +47,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             paid_amount=paid_amount,  # ✅ Use the actual paid_amount
             payment_status="PENDING",
         )
+
 
         # Generate invoice number
         invoice.invoice_number = f"INV-{invoice.id:06d}"
@@ -74,6 +77,7 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True, source="bills")
     customer_name = serializers.CharField(source="customer.name", read_only=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True)
+    floor_name = serializers.CharField(source="floor.name", read_only=True)
     created_by_name = serializers.CharField(
         source="created_by.username", read_only=True
     )
@@ -87,6 +91,8 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
             "invoice_type",
             "customer",
             "customer_name",
+            "floor",
+            "floor_name",
             "branch",
             "branch_name",
             "created_by",

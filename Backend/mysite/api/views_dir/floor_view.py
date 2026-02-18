@@ -2,15 +2,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView, Response
 
-from ..models import Table
-from ..serializer_dir.table_serializer import TableSerializer
+from ..models import Floor
+from ..serializer_dir.floor_serilizer import FloorSerializer
 
 
-class TableViewClass(APIView):
+class FloorViewClass(APIView):
     def get_user_role(self, user):
         return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
 
-    def get(self, request, table_id=None):
+    def get(self, request, floor_id=None):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
@@ -27,39 +27,38 @@ class TableViewClass(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if table_id:
-            # Get single table
-            table = get_object_or_404(Table, id=table_id)
+        if floor_id:
+            # Get single floor
+            floor = get_object_or_404(Floor, id=floor_id)
+            print(f"floor-> {floor}")
 
             if role in ["BRANCH_MANAGER", "COUNTER", "WAITER", "KITCHEN"]:
-                if not my_branch or table.branch != my_branch:
+                if not my_branch or floor.branch != my_branch:
                     return Response(
                         {
                             "success": False,
-                            "message": "Cannot access table from other branch",
+                            "message": "Cannot access floor from other branch",
                         },
                         status=status.HTTP_403_FORBIDDEN,
                     )
 
-            serializer = TableSerializer(table)
+            serializer = FloorSerializer(floor)
             return Response({"success": True, "data": serializer.data})
 
         else:
-            # Get all tables with branch filtering
+            # Get all floors with branch filtering
             if role in ["BRANCH_MANAGER", "COUNTER", "WAITER", "KITCHEN"]:
                 if not my_branch:
                     return Response(
                         {"success": False, "message": "No branch assigned"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                tables = Table.objects.filter(branch=my_branch)
-                table_count = tables.count()
-                print(f"Total table in {my_branch} is {table_count}")
+                floors = Floor.objects.filter(branch=my_branch)
             else:
-                # SUPER_ADMIN and ADMIN can see all tables
-                tables = Table.objects.all()
+                # SUPER_ADMIN and ADMIN can see all floors
+                floors = Floor.objects.all()
 
-            serializer = TableSerializer(tables, many=True)
+            serializer = FloorSerializer(floors, many=True)
             return Response({"success": True, "data": serializer.data})
 
     def post(self, request):
@@ -67,13 +66,13 @@ class TableViewClass(APIView):
         my_branch = request.user.branch
         comming_branch = request.data.get("branch")
 
-        # 1. Permission check - who can create tables?
+        # 1. Permission check - who can create floors?
         if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
             return Response(
                 {
                     "success": False,
                     "error": "Permission denied",
-                    "message": "You don't have permission to create tables!",
+                    "message": "You don't have permission to create floors!",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -83,7 +82,7 @@ class TableViewClass(APIView):
 
         # 3. Handle branch assignment based on role
         if role == "BRANCH_MANAGER":
-            # Branch managers can only create tables for their own branch
+            # Branch managers can only create floors for their own branch
             if not my_branch:
                 return Response(
                     {"success": False, "message": "No branch assigned"},
@@ -100,39 +99,39 @@ class TableViewClass(APIView):
                     {
                         "success": False,
                         "message": "Branch is required",
-                        "error": "Please specify a branch for the table",
+                        "error": "Please specify a branch for the floor",
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # 4. Check if table number already exists in the same branch
-        table_number = data.get("table_number")
+        # 4. Check if floor number already exists in the same branch
+        floor_number = data.get("floor_number")
         branch_id = data.get("branch")
 
-        if table_number and branch_id:
-            existing_table = Table.objects.filter(
-                table_number=table_number, branch_id=branch_id
+        if floor_number and branch_id:
+            existing_floor = Floor.objects.filter(
+                floor_number=floor_number, branch_id=branch_id
             ).first()
 
-            if existing_table:
+            if existing_floor:
                 return Response(
                     {
                         "success": False,
-                        "message": "Table number already exists",
-                        "error": f"Table #{table_number} already exists in this branch",
+                        "message": "Floor number already exists",
+                        "error": f"Floor #{floor_number} already exists in this branch",
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # 5. Create the table using serializer
-        serializer = TableSerializer(data=data)
+        # 5. Create the floor using serializer
+        serializer = FloorSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(
                 {
                     "success": True,
-                    "message": "Table created successfully",
+                    "message": "Floor created successfully",
                     "data": serializer.data,
                 },
                 status=status.HTTP_201_CREATED,
@@ -148,7 +147,7 @@ class TableViewClass(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    def patch(self, request, table_id):
+    def patch(self, request, floor_id):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
         comming_branch = request.data.get("branch")
@@ -159,25 +158,25 @@ class TableViewClass(APIView):
                 {
                     "success": False,
                     "error": "Permission denied",
-                    "message": "You don't have permission to update table!",
+                    "message": "You don't have permission to update floor!",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # 2. Get the table object
+        # 2. Get the floor object
         try:
-            table = Table.objects.get(id=table_id)
-        except Table.DoesNotExist:
+            floor = Floor.objects.get(id=floor_id)
+        except Floor.DoesNotExist:
             return Response(
                 {
                     "success": False,
                     "error": "Not found",
-                    "message": f"Table with id {table_id} does not exist",
+                    "message": f"Floor with id {floor_id} does not exist",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # 3. BRANCH_MANAGER can only update their own branch tables
+        # 3. BRANCH_MANAGER can only update their own branch floors
         if role == "BRANCH_MANAGER":
             if not my_branch:
                 return Response(
@@ -185,12 +184,12 @@ class TableViewClass(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if table.branch != my_branch:
+            if floor.branch != my_branch:
                 return Response(
                     {
                         "success": False,
                         "error": "Permission denied",
-                        "message": "You can only update tables in your own branch",
+                        "message": "You can only update floors in your own branch",
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
@@ -201,7 +200,7 @@ class TableViewClass(APIView):
                     {
                         "success": False,
                         "error": "Permission denied",
-                        "message": "You cannot change the branch of a table",
+                        "message": "You cannot change the branch of a floor",
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
@@ -210,21 +209,21 @@ class TableViewClass(APIView):
             data = request.data.copy()
             data["branch"] = my_branch.id
 
-        # 4. ADMIN/SUPER_ADMIN can update any table
+        # 4. ADMIN/SUPER_ADMIN can update any floor
         else:  # role in ["ADMIN", "SUPER_ADMIN"]
             data = request.data.copy()
             # If branch not specified, keep existing branch
             if "branch" not in data:
-                data["branch"] = table.branch.id
+                data["branch"] = floor.branch.id
 
-        serializer = TableSerializer(table, data=data, partial=True)
+        serializer = FloorSerializer(floor, data=data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
             return Response(
                 {
                     "success": True,
-                    "message": "Table updated successfully",
+                    "message": "Floor updated successfully",
                     "data": serializer.data,
                 },
                 status=status.HTTP_200_OK,  # Changed from 201 to 200 for updates
@@ -240,7 +239,7 @@ class TableViewClass(APIView):
             status=status.HTTP_400_BAD_REQUEST,  # Changed from 403 to 400
         )
 
-    def delete(self, request, table_id):
+    def delete(self, request, floor_id):
         role = self.get_user_role(request.user)
         my_branch = request.user.branch
 
@@ -250,33 +249,33 @@ class TableViewClass(APIView):
                 {
                     "success": False,
                     "error": "Permission denied",
-                    "message": "You don't have permission to delete tables!",
+                    "message": "You don't have permission to delete floors!",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # 2. Get the table object
+        # 2. Get the floor object
         try:
-            table = Table.objects.get(id=table_id)
-        except Table.DoesNotExist:
+            floor = Floor.objects.get(id=floor_id)
+        except Floor.DoesNotExist:
             return Response(
                 {
                     "success": False,
                     "error": "Not found",
-                    "message": f"Table with id {table_id} does not exist",
+                    "message": f"Floor with id {floor_id} does not exist",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # 3. Check if table has active orders (optional - business logic)
-        # Uncomment if you want to prevent deletion of tables with active orders
+        # 3. Check if floor has active orders (optional - business logic)
+        # Uncomment if you want to prevent deletion of floors with active orders
 
-        if table.active_orders.exists():
+        if floor.active_orders.exists():
             return Response(
                 {
                     "success": False,
                     "error": "Cannot delete",
-                    "message": "Table has active orders. Complete orders first.",
+                    "message": "Floor has active orders. Complete orders first.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -289,24 +288,24 @@ class TableViewClass(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if table.branch != my_branch:
+            if floor.branch != my_branch:
                 return Response(
                     {
                         "success": False,
                         "error": "Permission denied",
-                        "message": "You can only delete tables from your own branch",
+                        "message": "You can only delete floors from your own branch",
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
         # 5. Perform deletion
         try:
-            table.delete()
+            floor.delete()
             return Response(
                 {
                     "success": True,
-                    "message": f"Table #{table_id} deleted successfully",
-                    "deleted_id": table_id,
+                    "message": f"Floor #{floor_id} deleted successfully",
+                    "deleted_id": floor_id,
                 },
                 status=status.HTTP_200_OK,
             )
