@@ -187,7 +187,7 @@ class Invoice(models.Model):
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="bills")
     product = models.ForeignKey(
-        Product, null=True, blank=True, on_delete=models.SET_NULL, related_name="bills"
+        Product, null=True, blank=True, on_delete=models.SET_NULL, related_name="products"
     )
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
