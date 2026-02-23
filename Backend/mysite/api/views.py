@@ -12,7 +12,8 @@ from .views_dir.branch_view import BranchViewClass
 from .views_dir.categorys_view import CategoryViewClass
 from .views_dir.customer_view import CustomerViewClass
 from .views_dir.invoice_view import InvoiceViewClass
-from .views_dir.dashboard_view import TodaySalesView,TopSalesView
+from .views_dir.dashboard_view import DashboardApiView
+# ,HourlyFrom8AMView
 from .views_dir.payment_view import PaymentClassView
 
 # custom
@@ -53,5 +54,6 @@ InvoiceView = InvoiceViewClass
 PaymentView = PaymentClassView
 FloorView = floor_view.FloorViewClass
 ItemActivityView = item_activity_view.ItemActivityClassView
-TodaySalesView = TodaySalesView
-TopSalesView = TopSalesView
+DashboardView = DashboardApiView
+# TopSalesView = TopSalesView 
+# HourlyFrom8AMView = HourlyFrom8AMView

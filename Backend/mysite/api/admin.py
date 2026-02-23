@@ -130,7 +130,9 @@ class InvoiceItemAdmin(admin.ModelAdmin):
     list_display =(
         "id",
         "product",
-        "quantity"
+        "quantity",
+        "unit_price",
+        "discount_amount"
     )
 
 @admin.register(Payment)
