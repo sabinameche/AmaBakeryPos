@@ -3,3 +3,4 @@ db.sqlite3
 node_modules/
 reset.sh
 start.sh
+__pycache__/
