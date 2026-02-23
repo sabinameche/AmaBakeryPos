@@ -3,3 +3,8 @@ db.sqlite3
 node_modules/
 reset.sh
 start.sh
+
+# Python bytecode
+__pycache__/
+*.pyc
+
