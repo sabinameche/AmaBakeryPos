@@ -17,6 +17,7 @@ class DashboardViewClass(APIView):
     def get_user_role(self, user):
         return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
 
+
     def get(self, request, branch_id=None):
 
         role = self.get_user_role(request.user)
@@ -72,6 +73,9 @@ class DashboardViewClass(APIView):
                 
             order_percent = ((today_total_orders - yesterday_orders)/yesterday_orders) * 100
             
+            # avg order value
+
+
             
             # 4.peak hours
             hourly_orders = (
