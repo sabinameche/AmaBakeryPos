@@ -6,5 +6,4 @@ urlpatterns =[
     path('dashboard-details/<int:branch_id>/',views.DashboardView.as_view(),name="today-sales"),
     path('report-dashboard/',views.ReportDashboardView.as_view(),name="report-dashboard"),
     path('report-dashboard/<int:branch_id>/',views.ReportDashboardView.as_view(),name="report-dashboard"),
-    
 ]
