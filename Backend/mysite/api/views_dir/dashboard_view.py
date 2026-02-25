@@ -53,9 +53,6 @@ class DashboardViewClass(APIView):
 
                 today = timezone.now().date()
 
-                print("weekday->", today.weekday())
-                print("weekday today->", today)
-                print(timedelta(days=today.weekday()))
 
                 start_of_week = today - timedelta(days=today.weekday())  # Monday
                 print("st_week->>", start_of_week)
@@ -117,7 +114,7 @@ class DashboardViewClass(APIView):
                         "total_user": total_user_count - 1,
                         "total_count_order": total_count_order,
                         "average_order_value": average,
-                        "Weekely Sales": days,
+                        "Weekely_Sales": days,
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -365,6 +362,20 @@ class ReportDashboardViewClass(APIView):
                 elif item["weekday"] == 1:
                     days["sunday"] = item["total_sales"]
 
+
+            top_selling_items_count = (
+                InvoiceItem.objects.filter(invoice__branch=my_branch)
+                .values("product__name")
+                .annotate(total_orders=Sum("quantity")).annotate(total_sales=Sum(
+                        ExpressionWrapper(
+                            F("quantity") * F("unit_price") - F("discount_amount"),
+                            output_field=DecimalField(max_digits=10, decimal_places=2),
+                        )))
+                .order_by("-total_orders")[:5]
+            )
+
+           
+
             return Response(
                 {
                     "success": True,
@@ -372,6 +383,7 @@ class ReportDashboardViewClass(APIView):
                     "total_month_orders": total_orders.count(),
                     "Weekly_sales": days,
                     "avg_order_month": avg_order_month,
+                    "top_selling_items_count":top_selling_items_count,
                     "growth_percent": growth_percent,
                 }
             )
