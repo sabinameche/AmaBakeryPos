@@ -1,5 +1,5 @@
 from datetime import date, datetime, time, timedelta
-
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Sum
 from django.db.models.functions import (
@@ -168,11 +168,19 @@ class DashboardViewClass(APIView):
             ) * 100
 
             # 3. avg order value
-            today_avg_order = (today_sales) / today_total_orders
+            if today_total_orders == 0:
+                today_avg_order = 0
+            
+            else:
+                today_avg_order = Decimal(str((today_sales) / today_total_orders))
 
-            yesterday_avg_order = (yesterday_sales) / yesterday_orders
+            if yesterday_orders == 0:
+                yesterday_avg_order = 0
+            else:
+                yesterday_avg_order = Decimal(str((yesterday_sales) / yesterday_orders))
+
             if yesterday_avg_order == 0:
-                avg_order_percent = today_avg_order - yesterday_avg_order
+                avg_order_percent = (today_avg_order) - (yesterday_avg_order)
             else:
                 avg_order_percent = (
                     (today_avg_order - yesterday_avg_order) / yesterday_avg_order
