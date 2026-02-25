@@ -25,8 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory, deleteCategory, updateCategory } from "../../api/index.js";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -67,7 +66,7 @@ export default function AdminMenu() {
     const [editingCategoryName, setEditingCategoryName] = useState("");
     const [formAvailable, setFormAvailable] = useState(true);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-    const [catSearchOpen, setCatSearchOpen] = useState(false);
+    const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
     const [catSearchValue, setCatSearchValue] = useState("");
 
     useEffect(() => {
@@ -249,6 +248,7 @@ export default function AdminMenu() {
                                 setSelectedCategoryId(null);
                                 setFormAvailable(true);
                                 setCatSearchValue("");
+                                setIsCatDropdownOpen(false);
                             }}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Item
@@ -270,79 +270,85 @@ export default function AdminMenu() {
                                     <Input id="selling_price" name="selling_price" className="h-12 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 font-bold text-primary" type="number" step="0.01" placeholder="0.00" defaultValue={editItem?.selling_price} required />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 items-end">
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 relative">
                                         <Label htmlFor="category" className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Category</Label>
-                                        <Popover open={catSearchOpen} onOpenChange={setCatSearchOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    aria-expanded={catSearchOpen}
-                                                    className="w-full h-12 justify-between rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 font-medium px-4"
-                                                >
-                                                    {selectedCategoryId
-                                                        ? categories.find((cat) => cat.id === selectedCategoryId)?.name
-                                                        : "Select category..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-full p-0 rounded-2xl border-none shadow-2xl overflow-hidden z-[110]">
-                                                <Command className="border-none">
-                                                    <CommandInput
-                                                        placeholder="Search category..."
-                                                        value={catSearchValue}
-                                                        onValueChange={setCatSearchValue}
-                                                    />
-                                                    <CommandList className="max-h-[250px] scrollbar-hide">
-                                                        <CommandEmpty className="p-2">
-                                                            <div className="py-2 px-1 text-sm text-slate-500">No category found.</div>
-                                                            <Button
+                                        <div className="relative">
+                                            <Input
+                                                id="category"
+                                                autoComplete="off"
+                                                placeholder="Search or type new category..."
+                                                value={catSearchValue}
+                                                onChange={(e) => {
+                                                    setCatSearchValue(e.target.value);
+                                                    setIsCatDropdownOpen(true);
+                                                    const match = categories.find(c => c.name.toLowerCase() === e.target.value.toLowerCase());
+                                                    if (match) setSelectedCategoryId(match.id);
+                                                    else setSelectedCategoryId(null);
+                                                }}
+                                                onFocus={() => setIsCatDropdownOpen(true)}
+                                                className="h-12 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 pr-10"
+                                            />
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                                <Search className="h-4 w-4" />
+                                            </div>
+                                        </div>
+
+                                        {isCatDropdownOpen && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-[100]"
+                                                    onClick={() => setIsCatDropdownOpen(false)}
+                                                />
+                                                <Card className="absolute top-full left-0 right-0 mt-2 z-[110] rounded-2xl border border-slate-100 shadow-2xl overflow-hidden max-h-[250px] overflow-y-auto scrollbar-hide py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    {categories
+                                                        .filter(cat => cat.name.toLowerCase().includes(catSearchValue.toLowerCase()))
+                                                        .map(cat => (
+                                                            <button
+                                                                key={cat.id}
                                                                 type="button"
-                                                                variant="secondary"
-                                                                size="sm"
-                                                                className="w-full mt-2 rounded-xl h-10 font-bold bg-primary/10 text-primary hover:bg-primary/20"
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        const response = await createCategory({ name: catSearchValue.trim() });
-                                                                        const newCat = response.data;
-                                                                        setCategories(prev => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)));
-                                                                        setSelectedCategoryId(newCat.id);
-                                                                        setCatSearchOpen(false);
-                                                                        setCatSearchValue("");
-                                                                        toast.success(`Category "${newCat.name}" added`);
-                                                                    } catch (err: any) {
-                                                                        toast.error(err.message || "Failed to add category");
-                                                                    }
+                                                                className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-primary/5 hover:text-primary transition-colors flex items-center justify-between group"
+                                                                onClick={() => {
+                                                                    setSelectedCategoryId(cat.id);
+                                                                    setCatSearchValue(cat.name);
+                                                                    setIsCatDropdownOpen(false);
                                                                 }}
                                                             >
-                                                                Add "{catSearchValue}"
-                                                            </Button>
-                                                        </CommandEmpty>
-                                                        <CommandGroup>
-                                                            {categories.map((cat) => (
-                                                                <CommandItem
-                                                                    key={cat.id}
-                                                                    value={cat.name}
-                                                                    className="rounded-xl mx-2 my-1"
-                                                                    onSelect={() => {
-                                                                        setSelectedCategoryId(cat.id);
-                                                                        setCatSearchOpen(false);
-                                                                    }}
-                                                                >
-                                                                    <Check
-                                                                        className={cn(
-                                                                            "mr-2 h-4 w-4",
-                                                                            selectedCategoryId === cat.id ? "opacity-100" : "opacity-0"
-                                                                        )}
-                                                                    />
-                                                                    {cat.name}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
+                                                                <span>{cat.name}</span>
+                                                                <Check className={cn("h-4 w-4 text-primary", selectedCategoryId === cat.id ? "opacity-100" : "opacity-0")} />
+                                                            </button>
+                                                        ))}
+
+                                                    {catSearchValue.trim() && !categories.some(c => c.name.toLowerCase() === catSearchValue.toLowerCase()) && (
+                                                        <button
+                                                            type="button"
+                                                            className="w-full text-left px-4 py-3 text-sm font-black text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 border-t border-slate-50"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const response = await createCategory({ name: catSearchValue.trim() });
+                                                                    const newCat = response.data;
+                                                                    setCategories(prev => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)));
+                                                                    setSelectedCategoryId(newCat.id);
+                                                                    setCatSearchValue(newCat.name);
+                                                                    setIsCatDropdownOpen(false);
+                                                                    toast.success(`Category "${newCat.name}" added`);
+                                                                } catch (err: any) {
+                                                                    toast.error(err.message || "Failed to add category");
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                            Add "{catSearchValue}"
+                                                        </button>
+                                                    )}
+
+                                                    {catSearchValue.trim() === "" && categories.length === 0 && (
+                                                        <div className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
+                                                            No categories found
+                                                        </div>
+                                                    )}
+                                                </Card>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="flex items-center space-x-3 pb-2.5 pl-2">
                                         <Switch
@@ -511,7 +517,8 @@ export default function AdminMenu() {
                                                     setSelectedCategoryId(item.category);
                                                     setFormAvailable(item.is_available);
                                                     setIsDialogOpen(true);
-                                                    setCatSearchValue("");
+                                                    setCatSearchValue(item.category_name || "");
+                                                    setIsCatDropdownOpen(false);
                                                 }}
                                             >
                                                 <Pencil className="h-4 w-4" />
