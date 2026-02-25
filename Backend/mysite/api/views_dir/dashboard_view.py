@@ -1,3 +1,5 @@
+from datetime import date, timedelta,time,datetime
+from django.utils import timezone
 from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
@@ -12,6 +14,12 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count,Max
+from django.db.models.functions import TruncHour
+from ..models import Invoice, InvoiceItem
+from django.db.models.functions import ExtractYear
+from django.db.models.functions import ExtractWeek
+from django.db.models.functions import ExtractWeekDay
 
 from ..models import Branch, Invoice, InvoiceItem, User
 
@@ -22,6 +30,16 @@ class DashboardViewClass(APIView):
 
     def get_user_role(self, user):
         return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
+
+    def date_filter(self, branch, start_date, end_date):
+        start_datetime = datetime.combine(start_date, time.min)
+        end_datetime = datetime.combine(end_date + timedelta(days=1), time.min)
+
+        return Invoice.objects.filter(
+            branch=branch,
+            created_at__gte=start_datetime,
+            created_at__lt=end_datetime
+        )
 
     def get(self, request, branch_id=None):
         role = self.get_user_role(request.user)
@@ -118,6 +136,8 @@ class DashboardViewClass(APIView):
 
         if my_branch:
             # 1.today's total sales amount
+            today_invoices = self.date_filter(my_branch,self.todaydate,self.todaydate)
+            yesterday_invoices = self.date_filter(my_branch,self.yesterdaydate,self.yesterdaydate)
             today_invoices = Invoice.objects.filter(
                 branch=my_branch, created_at__date=self.todaydate
             )
@@ -128,6 +148,7 @@ class DashboardViewClass(APIView):
             yesterday_sales = 0
             today_sales = 0
             for invoice in today_invoices:
+                print(invoice.created_at)
                 print("Raw data time format ->>", invoice.created_at)
                 today_sales += invoice.total_amount
 
@@ -135,6 +156,7 @@ class DashboardViewClass(APIView):
                 yesterday_sales += invoice.total_amount
 
             if yesterday_sales == 0:
+                sales_percent = (today_sales - yesterday_sales)
                 sales_percent = today_sales - yesterday_sales
             else:
                 sales_percent = (
@@ -147,6 +169,18 @@ class DashboardViewClass(APIView):
 
             # 2.calculating order percent
             if yesterday_orders == 0:
+                ((today_total_orders - yesterday_orders))
+                
+            order_percent = ((today_total_orders - yesterday_orders)/yesterday_orders) * 100
+            
+            #3. avg order value
+            today_avg_order = (today_sales)/today_total_orders
+
+            yesterday_avg_order = (yesterday_sales)/yesterday_orders
+            if yesterday_avg_order == 0:
+                avg_order_percent = today_avg_order - yesterday_avg_order
+            else:
+                avg_order_percent = ((today_avg_order - yesterday_avg_order)/yesterday_avg_order) * 100
                 order_percent = today_total_orders - yesterday_orders
             else:
                 order_percent = (
@@ -157,6 +191,10 @@ class DashboardViewClass(APIView):
 
             # 4.peak hours
             hourly_orders = (
+                self.date_filter(my_branch,self.todaydate,self.todaydate)
+                .annotate(hour=TruncHour('created_at'))
+                .values('hour')
+                .annotate(total_orders=Count('id'))
                 Invoice.objects.filter(
                     branch=my_branch, created_at__date=self.todaydate
                 )
@@ -195,6 +233,19 @@ class DashboardViewClass(APIView):
             )
 
             return Response(
+                    {
+                        "success": True,
+                        "today_sales": today_sales,
+                        "sales_percent": sales_percent,
+                        "total_orders": today_total_orders,
+                        "order_percent": order_percent,
+                        "avg_orders": today_avg_order,
+                        "avg_order_percent":avg_order_percent,
+                        "peak_hours":formatted_peak_hours,
+                        "total_sales_per_category": total_sales_per_category,
+                        "top_selling_items": top_selling_items,
+                    }
+                )
                 {
                     "success": True,
                     "today_sales": today_sales,
@@ -251,6 +302,12 @@ class ReportDashboardViewClass(APIView):
                 created_at__month=current_month,
             )
 
+            # average order
+            avg_order_month = current_month_sales / total_orders.count()
+
+            # growth percent 
+            last_month_sales = Invoice.objects.filter(branch = my_branch,created_at__month = last_month.month).aggregate(total_sales = Sum('total_amount'))['total_sales'] or 0
+            
             # growth percent
             last_month_sales = (
                 Invoice.objects.filter(
@@ -265,6 +322,64 @@ class ReportDashboardViewClass(APIView):
             if last_month_sales == 0:
                 growth_percent = current_month_sales - last_month_sales
             else:
+                growth_percent = ((current_month_sales - last_month_sales)/last_month_sales) * 100
+
+            today = timezone.now().date()
+
+            start_of_week = today - timedelta(days=today.weekday())  # Monday
+            print(start_of_week)
+            
+            end_of_week = start_of_week + timedelta(days=6)
+            print(end_of_week)
+
+            current_week_data = Invoice.objects.filter(
+                branch = my_branch,
+                    created_at__date__gte=start_of_week,
+                    created_at__date__lte=end_of_week,
+                    
+                ).annotate(
+                    year=ExtractYear('created_at'),
+                    week=ExtractWeek('created_at'),
+                    weekday=ExtractWeekDay('created_at')  # 1=Sunday, 2=Monday, ..., 7=Saturday
+                ).values('year', 'week', 'weekday').annotate(
+                    total_sales=Sum('total_amount'),
+                ).order_by('year', 'week', 'weekday')
+
+            days = {
+                        "monday" : 0,
+                        "tuesday" : 0,
+                        "wednesday" : 0,
+                        "thursday" : 0,
+                        "friday" : 0,
+                        "saturday" : 0,
+                        "sunday" : 0,
+                        }
+               
+
+            for item in current_week_data:
+                print(item)
+
+                if item['weekday'] == 2:
+                    days['monday'] = item['total_sales']
+                elif item['weekday'] == 3:
+                    days['tuesday'] = item['total_sales']
+                elif item['weekday'] == 4:
+                    days['wednesday'] = item['total_sales']
+                elif item['weekday'] == 5:
+                    days['thursday'] = item['total_sales']
+                elif item['weekday'] == 6:
+                    days['friday'] = item['total_sales']
+                elif item['weekday'] == 7:
+                    days['saturday'] = item['total_sales']
+                elif item['weekday'] == 1:
+                    days['sunday'] = item['total_sales'] 
+            
+            return Response({"success":True,
+                             "total_month_sales":current_month_sales,
+                             "total_month_orders": total_orders.count(),
+                             "Weekly_sales": days,
+                             "avg_order_month":avg_order_month,
+                             "growth_percent":growth_percent})
                 growth_percent = (
                     (current_month_sales - last_month_sales) / last_month_sales
                 ) * 100
