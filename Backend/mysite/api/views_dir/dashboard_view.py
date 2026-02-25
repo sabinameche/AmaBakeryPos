@@ -2,7 +2,12 @@ from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Sum
-from django.db.models.functions import TruncHour
+from django.db.models.functions import (
+    ExtractWeek,
+    ExtractWeekDay,
+    ExtractYear,
+    TruncHour,
+)
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -38,6 +43,64 @@ class DashboardViewClass(APIView):
                 total_user_count = User.objects.all().count()
                 average = total_sum / total_count_order
 
+                today = timezone.now().date()
+
+                print("weekday->", today.weekday())
+                print("weekday today->", today)
+                print(timedelta(days=today.weekday()))
+
+                start_of_week = today - timedelta(days=today.weekday())  # Monday
+                print("st_week->>", start_of_week)
+
+                end_of_week = start_of_week + timedelta(days=6)
+
+                current_week_data = (
+                    Invoice.objects.filter(
+                        created_at__date__gte=start_of_week,
+                        created_at__date__lte=end_of_week,
+                    )
+                    .annotate(
+                        year=ExtractYear("created_at"),
+                        week=ExtractWeek("created_at"),
+                        weekday=ExtractWeekDay(
+                            "created_at"
+                        ),  # 1=Sunday, 2=Monday, ..., 7=Saturday
+                    )
+                    .values("year", "week", "weekday")
+                    .annotate(
+                        total_sales=Sum("total_amount"),
+                    )
+                    .order_by("year", "week", "weekday")
+                )
+
+                days = {
+                    "monday": 0,
+                    "tuesday": 0,
+                    "wednesday": 0,
+                    "thursday": 0,
+                    "friday": 0,
+                    "saturday": 0,
+                    "sunday": 0,
+                }
+                print("Current Week Data:")
+
+                for item in current_week_data:
+                    print(item)
+                    if item["weekday"] == 2:
+                        days["monday"] = item["total_sales"]
+                    elif item["weekday"] == 3:
+                        days["tuesday"] = item["total_sales"]
+                    elif item["weekday"] == 4:
+                        days["wednesday"] = item["total_sales"]
+                    elif item["weekday"] == 5:
+                        days["thursday"] = item["total_sales"]
+                    elif item["weekday"] == 6:
+                        days["friday"] = item["total_sales"]
+                    elif item["weekday"] == 7:
+                        days["saturday"] = item["total_sales"]
+                    elif item["weekday"] == 1:
+                        days["sunday"] = item["total_sales"]
+
                 return Response(
                     {
                         "success": True,
@@ -46,6 +109,7 @@ class DashboardViewClass(APIView):
                         "total_user": total_user_count - 1,
                         "total_count_order": total_count_order,
                         "average_order_value": average,
+                        "Weekely Sales": days,
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -64,6 +128,7 @@ class DashboardViewClass(APIView):
             yesterday_sales = 0
             today_sales = 0
             for invoice in today_invoices:
+                print("Raw data time format ->>", invoice.created_at)
                 today_sales += invoice.total_amount
 
             for invoice in yesterday_invoices:
