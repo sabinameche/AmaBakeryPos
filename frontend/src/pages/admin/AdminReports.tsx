@@ -1,21 +1,26 @@
 import { analyticsData } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import { fetchReportDashboard } from "@/api/index.js";
+import { getCurrentUser } from "../../auth/auth";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Download, 
-  FileText, 
-  TrendingUp, 
+import {
+  Download,
+  FileText,
+  TrendingUp,
   Calendar,
   Printer
 } from "lucide-react";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line
@@ -39,6 +44,28 @@ const waiterPerformance = [
 ];
 
 export default function AdminReports() {
+  const user = getCurrentUser();
+  const [reportData, setReportData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadReportData();
+  }, [user?.branch_id]);
+
+  const loadReportData = async () => {
+    setLoading(true);
+    try {
+      const branchId = (user?.role === 'admin' || user?.role === 'superadmin') ? (user?.branch_id || 1) : null;
+      const data = await fetchReportDashboard(branchId);
+      setReportData(data);
+    } catch (error) {
+      console.error("Failed to fetch report dashboard:", error);
+      toast.error("Failed to load report data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -118,18 +145,18 @@ export default function AdminReports() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}
                   formatter={(value: number) => `Rs.${value.toLocaleString()}`}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="sales" 
-                  stroke="hsl(var(--primary))" 
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   dot={{ fill: 'hsl(var(--primary))' }}
                 />
@@ -140,20 +167,28 @@ export default function AdminReports() {
           {/* Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="card-elevated p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total Sales</p>
-              <p className="text-2xl font-bold text-primary">Rs.{analyticsData.weekSales.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Month Sales</p>
+              <p className="text-2xl font-bold text-primary">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : `Rs.${reportData?.total_month_sales?.toLocaleString() || 0}`}
+              </p>
             </div>
             <div className="card-elevated p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">378</p>
+              <p className="text-sm text-muted-foreground">Total Month Orders</p>
+              <p className="text-2xl font-bold">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : (reportData?.total_month_orders || 0)}
+              </p>
             </div>
             <div className="card-elevated p-4 text-center">
-              <p className="text-sm text-muted-foreground">Avg Order</p>
-              <p className="text-2xl font-bold">Rs.489</p>
+              <p className="text-sm text-muted-foreground">Avg Order (Month)</p>
+              <p className="text-2xl font-bold">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : `Rs.${reportData?.total_month_sales && reportData?.total_month_orders ? (reportData.total_month_sales / reportData.total_month_orders).toFixed(0) : 0}`}
+              </p>
             </div>
             <div className="card-elevated p-4 text-center">
               <p className="text-sm text-muted-foreground">Growth</p>
-              <p className="text-2xl font-bold text-success">+12%</p>
+              <p className={`text-2xl font-bold ${(reportData?.growth_percent || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : `${(reportData?.growth_percent || 0).toFixed(1)}%`}
+              </p>
             </div>
           </div>
         </TabsContent>
@@ -166,9 +201,9 @@ export default function AdminReports() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
                 <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={120} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}
@@ -216,9 +251,9 @@ export default function AdminReports() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}

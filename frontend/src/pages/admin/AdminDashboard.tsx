@@ -2,7 +2,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { analyticsData, branches, User } from "@/lib/mockData";
-import { fetchInvoices, fetchTables, patchTable } from "@/api/index.js";
+import { fetchDashboardDetails, fetchInvoices, fetchTables, patchTable } from "@/api/index.js";
 import { getCurrentUser } from "../../auth/auth";
 import { toast } from "sonner";
 import {
@@ -36,14 +36,30 @@ export default function AdminDashboard() {
   const user = getCurrentUser();
   const branch = branches.find(b => b.id === user?.branch_id);
 
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableCount, setTableCount] = useState<number>(0);
 
   useEffect(() => {
+    loadDashboardData();
     loadRecentOrders();
     loadTableData();
   }, [user?.branch_id]);
+
+  const loadDashboardData = async () => {
+    try {
+      // If user is admin/superadmin, they might need a specific branch ID.
+      // Based on the request, for admin/superadmin it's /1/, for manager it's default.
+      // We'll use branch_id if available, or 1 as fallback for admin.
+      const branchId = (user?.role === 'admin' || user?.role === 'superadmin') ? (user?.branch_id || 1) : null;
+      const data = await fetchDashboardDetails(branchId);
+      setDashboardData(data);
+    } catch (error) {
+      console.error("Failed to fetch dashboard details:", error);
+      toast.error("Failed to load dashboard statistics");
+    }
+  };
 
   const loadTableData = async () => {
     try {
@@ -106,25 +122,24 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Today's Sales"
-          value={`Rs.${analyticsData.todaySales.toLocaleString()}`}
+          value={`Rs.${dashboardData?.today_sales?.toLocaleString() || 0}`}
           icon={DollarSign}
-          trend={{ value: 12, isPositive: true }}
+          trend={{ value: Number(Math.abs(dashboardData?.sales_percent || 0).toFixed(1)), isPositive: (dashboardData?.sales_percent || 0) >= 0 }}
         />
         <StatCard
           title="Total Orders"
-          value={analyticsData.totalOrders}
+          value={dashboardData?.total_orders || 0}
           icon={ShoppingBag}
-          trend={{ value: 8, isPositive: true }}
+          trend={{ value: Number(Math.abs(dashboardData?.order_percent || 0).toFixed(1)), isPositive: (dashboardData?.order_percent || 0) >= 0 }}
         />
         <StatCard
           title="Avg Order Value"
-          value={`Rs.${analyticsData.avgOrderValue}`}
+          value={`Rs.${dashboardData?.today_sales && dashboardData?.total_orders ? (dashboardData.today_sales / dashboardData.total_orders).toFixed(0) : 0}`}
           icon={TrendingUp}
-          trend={{ value: 3, isPositive: true }}
         />
         <StatCard
           title="Peak Hours"
-          value={analyticsData.peakHour}
+          value={dashboardData?.peak_hours?.[0] || "N/A"}
           icon={Clock}
           subtitle="Most orders"
         />
@@ -158,16 +173,16 @@ export default function AdminDashboard() {
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={analyticsData.categoryBreakdown}
-                dataKey="percentage"
-                nameKey="category"
+                data={dashboardData?.total_sales_per_category || []}
+                dataKey="category_total_sales"
+                nameKey="product__category__name"
                 cx="50%"
                 cy="50%"
                 innerRadius={50}
                 outerRadius={80}
                 paddingAngle={4}
               >
-                {analyticsData.categoryBreakdown.map((_, index) => (
+                {(dashboardData?.total_sales_per_category || []).map((_: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -177,21 +192,21 @@ export default function AdminDashboard() {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px'
                 }}
-                formatter={(value: number) => `${value}%`}
+                formatter={(value: number) => `Rs.${value.toLocaleString()}`}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-4 space-y-2">
-            {analyticsData.categoryBreakdown.map((item, index) => (
-              <div key={item.category} className="flex items-center justify-between text-sm">
+            {(dashboardData?.total_sales_per_category || []).map((item: any, index: number) => (
+              <div key={item.product__category__name} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <span
                     className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: COLORS[index] }}
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span>{item.category}</span>
+                  <span>{item.product__category__name}</span>
                 </div>
-                <span className="font-medium">Rs.{item.revenue.toLocaleString()}</span>
+                <span className="font-medium">Rs.{item.category_total_sales.toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -235,18 +250,17 @@ export default function AdminDashboard() {
             <Coffee className="h-5 w-5 text-primary" />
           </div>
           <div className="space-y-3">
-            {analyticsData.topItems.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between">
+            {(dashboardData?.top_selling_items || []).map((item: any, index: number) => (
+              <div key={item.product__name} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
                     {index + 1}
                   </span>
                   <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.count} orders</p>
+                    <p className="font-medium">{item.product__name}</p>
+                    <p className="text-xs text-muted-foreground">{item.total_orders} orders</p>
                   </div>
                 </div>
-                <span className="font-semibold text-primary">Rs.{item.revenue.toLocaleString()}</span>
               </div>
             ))}
           </div>

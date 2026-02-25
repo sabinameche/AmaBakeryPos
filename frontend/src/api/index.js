@@ -627,3 +627,41 @@ export async function fetchItemActivity(productId) {
   if (!res.ok) throw new Error(data?.message || "Failed to fetch item activity");
   return data.data;
 }
+
+export async function fetchDashboardDetails(branchId = null) {
+  const token = localStorage.getItem("access");
+  const url = branchId 
+    ? `${apiBaseUrl}/api/calculate/dashboard-details/${branchId}/`
+    : `${apiBaseUrl}/api/calculate/dashboard-details/`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to fetch dashboard details");
+  return data;
+}
+
+export async function fetchReportDashboard(branchId = null) {
+  const token = localStorage.getItem("access");
+  const url = branchId 
+    ? `${apiBaseUrl}/api/calculate/report-dashboard/${branchId}/`
+    : `${apiBaseUrl}/api/calculate/report-dashboard/`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to fetch report dashboard");
+  return data;
+}
