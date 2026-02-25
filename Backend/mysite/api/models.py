@@ -66,16 +66,28 @@ class Product(models.Model):
         on_delete=models.PROTECT,
         related_name="products",
     )
+    branch = models.ForeignKey(  # Add direct branch field
+        Branch,  # Replace with your actual Branch model name
+        on_delete=models.PROTECT,
+        related_name="products",
+        null=True,  
+    )
     low_stock_bar = models.IntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     is_available = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        # Auto-set branch from category when saving
+        if not self.branch_id and self.category:
+            self.branch = self.category.branch
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} - {self.category.branch.name}"
 
     class Meta:
-        unique_together = ["name", "category"]  # Fixed: Added category
+        unique_together = ["name",  "branch"]  # Now this works!
 
 
 class Customer(models.Model):

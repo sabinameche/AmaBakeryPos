@@ -1,14 +1,25 @@
+from datetime import datetime
 from decimal import Decimal
+
+from django.db import transaction
 from rest_framework import serializers
+
 from ..models import Invoice, InvoiceItem  # adjust import path if needed
 from .item_activity_serializer import ItemActivitySerializer
-from django.db import transaction
+
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
+
     class Meta:
         model = InvoiceItem
-        fields = ["product", "product_name", "quantity", "unit_price", "discount_amount"]
+        fields = [
+            "product",
+            "product_name",
+            "quantity",
+            "unit_price",
+            "discount_amount",
+        ]
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
@@ -17,13 +28,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
     - Does NOT accept created_at
     - Handles item creation and totals calculation
     """
+
     items = InvoiceItemSerializer(many=True)
     paid_amount = serializers.DecimalField(
         max_digits=15,
         decimal_places=2,
         required=False,
         default=Decimal("0.00"),
-        min_value=0
+        min_value=0,
     )
 
     class Meta:
@@ -41,12 +53,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "floor",
             # Intentionally NO created_at, created_by, subtotal, total_amount, etc.
         ]
+
     @transaction.atomic
     def create(self, validated_data):
         items_data = validated_data.pop("items")
         paid_amount = validated_data.pop("paid_amount", Decimal("0.00"))
         request = self.context.get("request")
-        notes = validated_data.get('notes',"")
+        notes = validated_data.get("notes", "")
 
         user = request.user if request else None
 
@@ -64,34 +77,41 @@ class InvoiceSerializer(serializers.ModelSerializer):
         role = getattr(user, "user_type", None)
         if paid_amount > 0 and user:
             if role == "WAITER":
-                invoice.payment_status="PENDING",
+                invoice.payment_status = ("PENDING",)
                 invoice.received_by_waiter = user
             elif role in ["COUNTER", "BRANCH_MANAGER", "ADMIN", "SUPER_ADMIN"]:
                 invoice.received_by_counter = user
 
         # Generate invoice number
+
+        branch_id = self.context.get("branch")
+        print(branch_id)
+        latest_invoice = (
+            Invoice.objects.filter(branch=branch_id).order_by("-created_at").first()
+        )
+        print("latest_invoice", latest_invoice)
+
         invoice.invoice_number = f"INV-{invoice.id:06d}"
+        print("date->>", str(datetime.today()))
+        print("date->>", str(datetime.today()).split(" ")[0])
 
         # Create items & calculate subtotal
         subtotal = Decimal("0.00")
         for item_data in items_data:
-            item = InvoiceItem.objects.create(
-                invoice=invoice,
-                **item_data
-            )
-            
+            item = InvoiceItem.objects.create(invoice=invoice, **item_data)
+
             item.product.product_quantity -= item.quantity
             item.product.save()
             line_total = item.quantity * item.unit_price - item.discount_amount
             subtotal += line_total
-        
+
             itemactivity = {
-                        "change": str(item.quantity),
-                        "quantity": item.product.product_quantity,
-                        "product": item.product_id,
-                        "types": "SALES",
-                        "remarks": notes,
-                    }
+                "change": str(item.quantity),
+                "quantity": item.product.product_quantity,
+                "product": item.product_id,
+                "types": "SALES",
+                "remarks": notes,
+            }
 
             itemserializer = ItemActivitySerializer(data=itemactivity)
             itemserializer.is_valid(raise_exception=True)
@@ -99,10 +119,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
         # Final totals
         invoice.subtotal = subtotal
-        invoice.total_amount = subtotal + (invoice.tax_amount or Decimal("0.00")) - (invoice.discount or Decimal("0.00"))
+        invoice.total_amount = (
+            subtotal
+            + (invoice.tax_amount or Decimal("0.00"))
+            - (invoice.discount or Decimal("0.00"))
+        )
 
         # Payment status logic
-        if invoice.paid_amount >= invoice.total_amount and role in ["COUNTER","ADMIN","BRANCH_MANAGER","SUPER_ADMIN"]:
+        if invoice.paid_amount >= invoice.total_amount and role in [
+            "COUNTER",
+            "ADMIN",
+            "BRANCH_MANAGER",
+            "SUPER_ADMIN",
+        ]:
             invoice.payment_status = "PAID"
         elif invoice.paid_amount > 0:
             invoice.payment_status = "PARTIAL"
@@ -112,7 +141,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         invoice.save()
         return invoice
 
-    def update(self ,instance, validated_data):
+    def update(self, instance, validated_data):
         # For simplicity — you can expand this if partial updates of items are needed
         items_data = validated_data.pop("items", None)
         paid_amount = validated_data.pop("paid_amount", None)
@@ -135,10 +164,17 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 item = InvoiceItem.objects.create(invoice=instance, **item_data)
                 subtotal += item.quantity * item.unit_price - item.discount_amount
             instance.subtotal = subtotal
-            instance.total_amount = subtotal + (instance.tax_amount or 0) - (instance.discount or 0)
+            instance.total_amount = (
+                subtotal + (instance.tax_amount or 0) - (instance.discount or 0)
+            )
 
         # Re-evaluate payment status
-        if instance.paid_amount >= instance.total_amount and role in ["COUNTER","ADMIN","BRANCH_MANAGER","SUPER_ADMIN"]:
+        if instance.paid_amount >= instance.total_amount and role in [
+            "COUNTER",
+            "ADMIN",
+            "BRANCH_MANAGER",
+            "SUPER_ADMIN",
+        ]:
             instance.payment_status = "PAID"
         elif instance.paid_amount > 0:
             instance.payment_status = "PARTIAL"
@@ -155,19 +191,23 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
     - Includes read-only fields, names, due_amount, formatted created_at
     - Uses related_name 'bills' for items (adjust if your related_name is different)
     """
+
     items = InvoiceItemSerializer(many=True, source="bills")
     customer_name = serializers.CharField(source="customer.name", read_only=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True)
     floor_name = serializers.CharField(source="floor.name", read_only=True)
-    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
-    received_by_waiter_name = serializers.CharField(source="received_by_waiter.username", read_only=True)
-    received_by_counter_name = serializers.CharField(source="received_by_counter.username", read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
+    received_by_waiter_name = serializers.CharField(
+        source="received_by_waiter.username", read_only=True
+    )
+    received_by_counter_name = serializers.CharField(
+        source="received_by_counter.username", read_only=True
+    )
     due_amount = serializers.SerializerMethodField()
     payment_methods = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(
-        format="%Y-%m-%d %H:%M:%S",
-        read_only=True
-    )
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
         model = Invoice
@@ -207,4 +247,4 @@ class InvoiceResponseSerializer(serializers.ModelSerializer):
         return obj.total_amount - obj.paid_amount
 
     def get_payment_methods(self, obj):
-        return list(obj.payments.values_list('payment_method', flat=True).distinct())
+        return list(obj.payments.values_list("payment_method", flat=True).distinct())

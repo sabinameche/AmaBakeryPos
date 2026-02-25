@@ -91,27 +91,28 @@ class ProductViewClass(APIView):
             )
 
         # Check if product already exists (case-insensitive)
-        existing_product = Product.objects.filter(name__iexact=product_name).first()
-
+        cat = request.data.get("category")
+        existing_product = Product.objects.filter(name__iexact=product_name,branch=my_branch,category = cat).first()
+        #
         if existing_product:
-            return Response(
-                {
-                    "success": False,
-                    "message": f"Product '{product_name}' already exists.",
-                    "existing_product": {
-                        "id": existing_product.id,
-                        "name": existing_product.name,
-                        "category": existing_product.category.name
-                        if existing_product.category
-                        else None,
-                        "branch": existing_product.category.branch.name
-                        if existing_product.category
-                        else None,
-                    },
-                },
-                status=status.HTTP_409_CONFLICT,  # 409 Conflict is perfect for this
-            )
-
+              return Response(
+                  {
+                      "success": False,
+                      "message": f"Product '{product_name}' already exists.",
+                      "existing_product": {
+                          "id": existing_product.id,
+                          "name": existing_product.name,
+                          "category": existing_product.category.name
+                          if existing_product.category
+                          else None,
+                          "branch": existing_product.category.branch.name
+                          if existing_product.category
+                          else None,
+                      },
+                  },
+                  status=status.HTTP_409_CONFLICT,  # 409 Conflict is perfect for this
+              )
+        
         # Prepare data
         data = request.data.copy()
         if not my_branch:

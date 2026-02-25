@@ -76,6 +76,7 @@ class InvoiceViewClass(APIView):
     def post(self, request):
         """Create new invoice"""
         role = self.get_user_role(request.user)
+        my_branch = request.user.branch
 
         # Check permissions
         if role not in ["ADMIN", "SUPER_ADMIN", "COUNTER", "WAITER", "BRANCH_MANAGER"]:
@@ -84,7 +85,7 @@ class InvoiceViewClass(APIView):
                 status=status.HTTP_403_FORBIDDEN,  #  Use status constants
             )
 
-        serializer = InvoiceSerializer(data=request.data, context={"request": request})
+        serializer = InvoiceSerializer(data=request.data, context={"request": request,"branch":my_branch.id})
 
         if serializer.is_valid():
             print("yy")
