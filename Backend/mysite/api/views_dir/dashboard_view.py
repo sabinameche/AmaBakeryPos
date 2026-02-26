@@ -164,12 +164,6 @@ class DashboardViewClass(APIView):
             yesterday_invoices = self.date_filter(
                 my_branch, self.yesterdaydate, self.yesterdaydate
             )
-            today_invoices = Invoice.objects.filter(
-                branch=my_branch, created_at__date=self.todaydate
-            )
-            yesterday_invoices = Invoice.objects.filter(
-                branch=my_branch, created_at__date=self.yesterdaydate
-            )
 
             yesterday_sales = 0
             today_sales = 0
@@ -341,43 +335,15 @@ class DashboardViewClass(APIView):
                     "top_selling_items": top_selling_items,
                     "Weekely_Sales": branch_days,
                     "Hourly_sales": hourly_sales_branch,
-                },
-                status=status.HTTP_200_OK,
+                }
             )
 
+def report_dashboard(my_branch):
+    current_month = timezone.localdate().month
+    current_year = timezone.localdate().year
 
-class ReportDashboardViewClass(APIView):
-    def get_user_role(self, user):
-        return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
-
-    def get(self, request, branch_id=None):
-        role = self.get_user_role(request.user)
-        my_branch = getattr(request.user, "branch", None)
-        current_month = timezone.localdate().month
-        current_year = timezone.localdate().year
-
-        last_month = timezone.localdate() - relativedelta(months=1)
-
-        if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
-            return Response(
-                {"success": False, "message": "Insufficient permissions"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if role in ["SUPER_ADMIN", "ADMIN"]:
-            if not branch_id:
-                return Response(
-                    {
-                        "success": False,
-                        "message": "branch_id is required for admin/superadmin",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            my_branch = branch_id
-
-        if my_branch:
-            # total sales
-            current_month_sales = (
+    last_month = timezone.localdate() - relativedelta(months=1)
+    current_month_sales = (
                 Invoice.objects.filter(
                     branch=my_branch,
                     created_at__year=current_year,
@@ -388,49 +354,47 @@ class ReportDashboardViewClass(APIView):
                 or 0
             )
 
-            # total orders
-            total_orders = Invoice.objects.filter(
+    # total orders
+    total_orders = Invoice.objects.filter(
                 branch=my_branch,
                 created_at__year=current_year,
                 created_at__month=current_month,
             )
 
-            # average order
-            avg_order_month = current_month_sales / total_orders.count()
+    # average order
+    avg_order_month = current_month_sales / total_orders.count()
 
-            print("This is last month->", last_month.month)
+    print("This is last month->", last_month.month)
 
-            # growth percent
-            last_month_sales = Invoice.objects.filter(
+    # growth percent
+    last_month_sales = Invoice.objects.filter(
                 branch=my_branch, created_at__month=last_month.month
             )
 
-            for sale in last_month_sales:
+    for sale in last_month_sales:
                 print(sale)
             # growth percent
-            last_month_sales = (
+    last_month_sales = (
                 Invoice.objects.filter(
                     branch=my_branch, created_at__month=last_month.month
                 ).aggregate(total_sales=Sum("total_amount"))["total_sales"]
                 or 0
             )
 
-            if last_month_sales == 0:
-                growth_percent = current_month_sales - last_month_sales
-            else:
-                growth_percent = (
+    if last_month_sales == 0:
+        growth_percent = current_month_sales - last_month_sales
+    else:
+        growth_percent = (
                     (current_month_sales - last_month_sales) / last_month_sales
                 ) * 100
 
-            today = timezone.now().date()
+    today = timezone.now().date()
 
-            start_of_week = today - timedelta(days=today.weekday())  # Monday
-            print(start_of_week)
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
 
-            end_of_week = start_of_week + timedelta(days=6)
-            print(end_of_week)
+    end_of_week = start_of_week + timedelta(days=6)
 
-            current_week_data = (
+    current_week_data = (
                 Invoice.objects.filter(
                     branch=my_branch,
                     created_at__date__gte=start_of_week,
@@ -450,7 +414,7 @@ class ReportDashboardViewClass(APIView):
                 .order_by("year", "week", "weekday")
             )
 
-            days = {
+    days = {
                 "monday": 0,
                 "tuesday": 0,
                 "wednesday": 0,
@@ -460,7 +424,7 @@ class ReportDashboardViewClass(APIView):
                 "sunday": 0,
             }
 
-            for item in current_week_data:
+    for item in current_week_data:
                 print(item)
 
                 if item["weekday"] == 2:
@@ -479,7 +443,7 @@ class ReportDashboardViewClass(APIView):
                     days["sunday"] = item["total_sales"]
 
             # Hourly sales for today (8am to 8pm)
-            hourly_data_raw = (
+    hourly_data_raw = (
                 Invoice.objects.filter(
                     branch=my_branch,
                     created_at__date=today,
@@ -490,8 +454,8 @@ class ReportDashboardViewClass(APIView):
             )
 
             # Initialize hours 8am to 8pm as a list for charts
-            hourly_sales_list = []
-            for h in range(8, 21):
+    hourly_sales_list = []
+    for h in range(8, 21):
                 label = f"{h if h <= 12 else h - 12} {'AM' if h < 12 else 'PM'}"
                 if h == 12:
                     label = "12 PM"
@@ -503,7 +467,7 @@ class ReportDashboardViewClass(APIView):
                         break
                 hourly_sales_list.append({"hour": label, "sales": sales_val})
 
-            top_selling_items_count = (
+    top_selling_items_count = (
                 InvoiceItem.objects.filter(invoice__branch=my_branch)
                 .values("product__name")
                 .annotate(total_orders=Sum("quantity"))
@@ -518,8 +482,7 @@ class ReportDashboardViewClass(APIView):
                 .order_by("-total_orders")[:5]
             )
 
-            return Response(
-                {
+    return{
                     "success": True,
                     "total_month_sales": current_month_sales,
                     "total_month_orders": total_orders.count(),
@@ -528,5 +491,33 @@ class ReportDashboardViewClass(APIView):
                     "avg_order_month": avg_order_month,
                     "top_selling_items_count": top_selling_items_count,
                     "growth_percent": growth_percent,
-                },status=status.HTTP_200_OK
+                }
+
+class ReportDashboardViewClass(APIView):
+    def get_user_role(self, user):
+        return "SUPER_ADMIN" if user.is_superuser else getattr(user, "user_type", "")
+
+    def get(self, request, branch_id=None):
+        role = self.get_user_role(request.user)
+        my_branch = getattr(request.user, "branch", None)
+        
+
+        if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
+            return Response(
+                {"success": False, "message": "Insufficient permissions"},
+                status=status.HTTP_403_FORBIDDEN,
             )
+
+        if role in ["SUPER_ADMIN", "ADMIN"]:
+            if not branch_id:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "branch_id is required for admin/superadmin",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            my_branch = branch_id
+
+        data = report_dashboard(my_branch)
+        return Response({"success": True, **data}, status=status.HTTP_200_OK)
