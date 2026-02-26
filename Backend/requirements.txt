@@ -11,3 +11,5 @@ sqlparse
 psycopg2-binary
 python-dotenv
 python-dateutil
+channels
+channels-redis
