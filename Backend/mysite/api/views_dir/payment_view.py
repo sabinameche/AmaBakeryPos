@@ -144,7 +144,7 @@ class PaymentClassView(APIView):
         # Determine if this is a zero-amount handover confirmation
         is_handover_confirmation = (
             amount == 0 
-            and invoice.payment_status == "PAID" 
+            and invoice.payment_status == "PARTIAL" 
             and invoice.received_by_waiter 
             and not invoice.received_by_counter
         )

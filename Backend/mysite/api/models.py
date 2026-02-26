@@ -123,6 +123,7 @@ class Invoice(models.Model):
 
     PAYMENT_STATUS_CHOICES = [
         ("PENDING", "Pending"),
+        ("UNPAID", "Unpaid"),
         ("PARTIAL", "Partially Paid"),
         ("PAID", "Fully Paid"),
         ("CANCELLED", "Cancelled"),
@@ -249,6 +250,7 @@ class Payment(models.Model):
         ("CASH", "Cash"),
         ("CARD", "Card"),
         ("ONLINE", "Online"),
+        ("QR", "QR"),
     ]
 
     invoice = models.ForeignKey(
