@@ -588,7 +588,6 @@ export default function Checkout() {
             <MobileHeader
                 title="Checkout"
                 showBack
-                showNotification={false}
             />
 
             <div className="p-4 space-y-4 max-w-2xl mx-auto">

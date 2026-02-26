@@ -152,7 +152,7 @@ export default function TableSelection() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      <MobileHeader title="" notificationCount={2} />
+      <MobileHeader title="" />
 
       <main className="p-4 max-w-2xl mx-auto pt-4 space-y-6">
         {/* Floor Selection */}

@@ -42,7 +42,7 @@ export function SuperAdminLayout() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setIsResetModalOpen(true)}
-                            className="text-slate-500 hover:text-primary font-bold transition-all px-3"
+                            className="text-slate-500 hover:text-white font-bold transition-all px-3"
                         >
                             Change Password
                         </Button>

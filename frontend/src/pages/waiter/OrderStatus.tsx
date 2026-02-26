@@ -55,7 +55,7 @@ export default function OrderStatus() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <MobileHeader title="Orders" showBack={false} notificationCount={readyOrders.length} />
+      <MobileHeader title="Orders" showBack={false} />
 
       <main className="p-4 space-y-4">
         {/* Tabs */}

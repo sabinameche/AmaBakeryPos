@@ -185,7 +185,6 @@ export default function OrderEntry() {
       <MobileHeader
         title={`Table ${tableNumber}${groupName ? ` • ${groupName}` : ''}`}
         showBack
-        showNotification={false}
       />
 
       {/* Search Bar */}

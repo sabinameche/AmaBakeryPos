@@ -4,18 +4,15 @@ import { AdminSidebar } from "./AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, MapPin, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { branches, User as UserType } from "@/lib/mockData";
-import { logout } from "@/auth/auth";
+import { logout, getCurrentUser } from "@/auth/auth";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  // Get current user and branch
-  const storedUser = localStorage.getItem('currentUser');
-  const user: UserType | null = storedUser ? JSON.parse(storedUser) : null;
-  const branch = branches.find(b => b.id === user?.branchId);
+  const user = getCurrentUser();
+  const branchName = user?.branch_name || "Ama Bakery";
 
   return (
     <div className="min-h-screen bg-slate-50/50">
@@ -28,14 +25,16 @@ export function AdminLayout() {
       <header className="sticky top-0 z-50 h-16 hidden md:flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          <span className="font-bold text-slate-700">{branch?.name || "Ama Bakery HQ"}</span>
+          <span className="font-bold text-slate-700">{branchName}</span>
         </div>
 
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm font-bold text-slate-900 leading-none">{user?.username || "Admin"}</p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Branch Manager</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">
+                {user?.is_branch_scoped ? "Super Admin (Scoped)" : "Branch Manager"}
+              </p>
             </div>
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border-2 border-primary/20">
               <UserIcon className="h-5 w-5" />
@@ -47,7 +46,7 @@ export function AdminLayout() {
               variant="ghost"
               size="sm"
               onClick={() => setIsResetModalOpen(true)}
-              className="text-slate-500 hover:text-primary font-bold transition-all px-3"
+              className="text-slate-500 hover:text-white font-bold transition-all px-3"
             >
               Change Password
             </Button>
@@ -89,8 +88,8 @@ export function AdminLayout() {
             <div className="h-8 w-8 rounded-lg overflow-hidden border border-primary/20 bg-white">
               <img src="/logos/logo2brown.jpeg" alt="Ama Bakery" className="h-full w-full object-cover" />
             </div>
-            <div className="flex flex-col">
-              <h1 className="font-bold text-sm leading-none">{branch?.name || "Ama Bakery"}</h1>
+            <div className="flex flex-col text-left">
+              <h1 className="font-bold text-sm leading-none">{branchName}</h1>
               <span className="text-[10px] text-muted-foreground font-medium">Branch Admin</span>
             </div>
           </div>

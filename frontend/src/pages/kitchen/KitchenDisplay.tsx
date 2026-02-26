@@ -259,7 +259,7 @@ export default function KitchenDisplay() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowChangePassword(true)}
-                className="text-slate-500 hover:text-primary font-bold transition-all px-3 hidden sm:flex"
+                className="text-slate-500 hover:text-white font-bold transition-all px-3 hidden sm:flex"
               >
                 Change Password
               </Button>
@@ -267,7 +267,7 @@ export default function KitchenDisplay() {
                 variant="ghost"
                 size="icon"
                 onClick={() => logout()}
-                className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-full"
+                className="h-10 w-10 text-red-500 hover:bg-red-500 rounded-full"
                 title="Logout"
               >
                 <LogOut className="h-5 w-5" />

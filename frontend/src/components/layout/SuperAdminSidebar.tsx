@@ -16,7 +16,7 @@ import { useState } from "react";
 
 const navItems = [
     { icon: LayoutDashboard, label: "HQ Dashboard", path: "/super-admin/dashboard" },
-    { icon: Monitor, label: "POS Terminal", path: "/counter/pos" },
+    // { icon: Monitor, label: "POS Terminal", path: "/counter/pos" },
     { icon: Store, label: "All Branches", path: "/super-admin/branches" },
     { icon: BarChart3, label: "Global Analytics", path: "/super-admin/analytics" },
     { icon: Users, label: "Admin Access", path: "/super-admin/access" },
@@ -73,15 +73,7 @@ export function SuperAdminSidebar({ className, onNavigate }: SuperAdminSidebarPr
 
             {/* Security Info */}
             <div className="p-4 border-t border-sidebar-border space-y-2">
-                <button
-                    onClick={() => {
-                        if (confirm("Are you sure you want to log out?")) logout();
-                    }}
-                    className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 transition-all text-left"
-                >
-                    <LogOut className="h-5 w-5" />
-                    Sign Out
-                </button>
+
             </div>
         </div>
     );

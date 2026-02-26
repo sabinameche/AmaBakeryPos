@@ -10,24 +10,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeft,
-  Bell,
   User as UserIcon,
-  LogOut,
   Settings,
   HelpCircle
 } from "lucide-react";
-import { logout, getCurrentUser } from "@/auth/auth";
+import { getCurrentUser } from "@/auth/auth";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
 import { useState } from "react";
 
 interface MobileHeaderProps {
   title: string;
   showBack?: boolean;
-  showNotification?: boolean;
-  notificationCount?: number;
 }
 
-export function MobileHeader({ title, showBack = false, showNotification = true, notificationCount = 0 }: MobileHeaderProps) {
+export function MobileHeader({ title, showBack = false }: MobileHeaderProps) {
   const navigate = useNavigate();
   const [showChangePassword, setShowChangePassword] = useState(false);
 
@@ -60,25 +56,6 @@ export function MobileHeader({ title, showBack = false, showNotification = true,
         </div>
 
         <div className="flex items-center gap-2">
-          {showNotification && (
-            <Button variant="ghost" size="icon" className="relative h-10 w-10 text-slate-500 hover:bg-slate-100">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">
-                  {notificationCount}
-                </span>
-              )}
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => logout()}
-            className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-full"
-            title="Logout"
-          >
-            <LogOut className="h-5 w-5" />
-          </Button>
         </div>
       </div>
       <ChangePasswordModal

@@ -38,11 +38,36 @@ export function getDecodedToken(): DecodedToken | null {
 export function getCurrentUser() {
   const decoded = getDecodedToken();
   if (decoded) {
+    const userRole = decoded.user_type;
+    const isSuperuser = decoded.is_superuser || userRole === 'SUPER_ADMIN';
+
+    // If SuperAdmin has selected a specific branch, override the branch details
+    if (isSuperuser) {
+      const selectedBranchStr = localStorage.getItem('selectedBranch');
+      if (selectedBranchStr) {
+        try {
+          const selectedBranch = JSON.parse(selectedBranchStr);
+          return {
+            id: decoded.user_id,
+            username: decoded.username,
+            role: userRole,
+            is_superuser: true,
+            is_staff: decoded.is_staff,
+            branch_id: selectedBranch.id,
+            branch_name: selectedBranch.name,
+            is_branch_scoped: true // Added flag to indicate this is a scoped view
+          };
+        } catch (e) {
+          console.error("Error parsing selectedBranch", e);
+        }
+      }
+    }
+
     return {
       id: decoded.user_id,
       username: decoded.username,
-      role: decoded.user_type, // This should match our expected roles
-      is_superuser: decoded.is_superuser,
+      role: userRole,
+      is_superuser: isSuperuser,
       is_staff: decoded.is_staff,
       branch_id: decoded.branch_id,
       branch_name: decoded.branch_name,

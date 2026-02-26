@@ -208,7 +208,7 @@ export default function CounterOrders() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowChangePassword(true)}
-                        className="text-slate-500 hover:text-primary font-bold transition-all px-3 hidden sm:flex"
+                        className="text-slate-500 hover:text-white font-bold transition-all px-3 hidden sm:flex"
                     >
                         Change Password
                     </Button>

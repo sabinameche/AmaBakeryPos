@@ -163,20 +163,17 @@ export default function SuperAdminOverview() {
     const activeBranches = branches.filter(b => (b.status || 'active') === 'active').length;
 
     const handleAccessBranch = (branch: Branch) => {
-        // Find an admin for this branch in mock data for now, since we don't have a fetchUsersByBranch API yet
-        const branchAdmin = mockUsers.find(u => String(u.branchId) === String(branch.id) && u.role === 'admin');
+        // For SuperAdmins, we set a temporary branch scope instead of full impersonation
+        localStorage.setItem('selectedBranch', JSON.stringify({
+            id: branch.id,
+            name: branch.name
+        }));
 
-        if (branchAdmin) {
-            localStorage.setItem('currentUser', JSON.stringify(branchAdmin));
-            toast.success(`Accessing ${branch.name} Admin Portal`, {
-                description: `Logged in as ${branchAdmin.name}`,
-            });
-            navigate('/admin/dashboard');
-        } else {
-            toast.error("Access Denied", {
-                description: "No admin account found for this branch in our records.",
-            });
-        }
+        toast.success(`Accessing ${branch.name} Dashboard`, {
+            description: "You are now viewing branch-specific data.",
+        });
+
+        navigate('/admin/dashboard');
     };
 
     return (
@@ -277,22 +274,22 @@ export default function SuperAdminOverview() {
                             })()}
                             margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
                         >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9A83F" />
                             <XAxis
                                 dataKey="day"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                tick={{ fill: '#D9A83F', fontSize: 11, fontWeight: 700 }}
                                 dy={10}
                             />
                             <YAxis
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                tick={{ fill: '#D9A83F', fontSize: 11, fontWeight: 700 }}
                                 tickFormatter={(value) => `Rs.${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value}`}
                             />
                             <Tooltip
-                                cursor={{ fill: '#f8fafc' }}
+                                cursor={{ fill: '#dceeffff' }}
                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                 formatter={(value: number) => [`Rs.${value.toLocaleString()}`, 'Sales']}
                             />
@@ -304,7 +301,7 @@ export default function SuperAdminOverview() {
                                 {[0, 1, 2, 3, 4, 5, 6].map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={index === new Date().getDay() - 1 ? 'hsl(var(--primary))' : '#e2e8f0'}
+                                        fill={index === new Date().getDay() - 1 ? 'hsl(var(--primary))' : '#D9A83F'}
                                         className="transition-all duration-500"
                                     />
                                 ))}
