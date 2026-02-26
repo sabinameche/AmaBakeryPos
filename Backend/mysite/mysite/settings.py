@@ -50,6 +50,7 @@ SIMPLE_JWT = {
 # Application definition
 
 INSTALLED_APPS = [
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -89,8 +90,20 @@ TEMPLATES = [
     },
 ]
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+    },
+} 
+
+# for normal http 
 WSGI_APPLICATION = "mysite.wsgi.application"
 
+# for websockets
+ASGI_APPLICATION = "mysite.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
