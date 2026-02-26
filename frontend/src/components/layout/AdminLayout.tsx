@@ -18,12 +18,12 @@ export function AdminLayout() {
   return (
     <div className="min-h-screen bg-slate-50/50">
       {/* Desktop Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 hidden md:block">
+      <aside className="fixed left-0 top-0 z-[60] h-screen w-64 hidden md:block">
         <AdminSidebar />
       </aside>
 
       {/* Desktop Header */}
-      <header className="fixed top-0 left-64 right-0 z-30 h-16 hidden md:flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <header className="sticky top-0 z-50 h-16 hidden md:flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
           <span className="font-bold text-slate-700">{branch?.name || "Ama Bakery HQ"}</span>
@@ -55,7 +55,7 @@ export function AdminLayout() {
       </header>
 
       {/* Mobile Header */}
-      <div className="md:hidden sticky top-0 z-30 flex items-center justify-between p-4 pr-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="md:hidden sticky top-0 z-50 flex items-center justify-between p-4 pr-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center gap-1">
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
@@ -80,7 +80,7 @@ export function AdminLayout() {
         </div>
       </div>
 
-      <main className="md:ml-64 md:pt-16 min-h-screen transition-all duration-200 ease-in-out">
+      <main className="md:ml-64 min-h-screen transition-all duration-200 ease-in-out">
         <Outlet />
       </main>
     </div>

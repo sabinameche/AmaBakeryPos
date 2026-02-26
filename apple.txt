@@ -1,0 +1,1 @@
+on admin posterminal there should be back button in pos terminal to back to admin and fix recent order on pos terminal too

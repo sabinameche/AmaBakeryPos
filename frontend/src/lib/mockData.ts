@@ -46,7 +46,7 @@ export interface Order {
 export interface User {
   id: string;
   name: string;
-  role: 'waiter' | 'kitchen' | 'supervisor' | 'admin' | 'counter' | 'superadmin';
+  role: 'waiter' | 'kitchen' | 'supervisor' | 'admin' | 'counter' | 'superadmin' | 'ADMIN' | 'BRANCH_MANAGER' | 'SUPER_ADMIN';
   username: string;
   password: string;
   branchId?: string; // For branch-specific users; superadmin doesn't have this

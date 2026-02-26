@@ -13,12 +13,12 @@ export function SuperAdminLayout() {
     return (
         <div className="min-h-screen bg-slate-50/50">
             {/* Desktop Sidebar */}
-            <aside className="fixed left-0 top-0 z-40 h-screen w-64 hidden md:block border-r bg-white">
+            <aside className="fixed left-0 top-0 z-[60] h-screen w-64 hidden md:block border-r bg-white">
                 <SuperAdminSidebar />
             </aside>
 
             {/* Desktop Header */}
-            <header className="fixed top-0 left-64 right-0 z-30 h-16 hidden md:flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-100">
+            <header className="sticky top-0 z-50 h-16 hidden md:flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-100">
                 <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" />
                     <span className="font-black text-slate-800 tracking-tight uppercase text-xs tracking-widest">HQ Command Center</span>
@@ -50,7 +50,7 @@ export function SuperAdminLayout() {
             </header>
 
             {/* Mobile Header */}
-            <div className="md:hidden sticky top-0 z-30 flex items-center justify-between p-4 pr-14 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <div className="md:hidden sticky top-0 z-50 flex items-center justify-between p-4 pr-14 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
                 <div className="flex items-center gap-3">
                     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                         <SheetTrigger asChild>
@@ -72,7 +72,7 @@ export function SuperAdminLayout() {
             </div>
 
             {/* Main Content */}
-            <main className="md:ml-64 md:pt-16 p-4 md:p-6 lg:p-8 space-y-6 text-slate-900">
+            <main className="md:ml-64 p-4 md:p-6 lg:p-8 space-y-6 text-slate-900">
                 <Outlet />
             </main>
         </div>

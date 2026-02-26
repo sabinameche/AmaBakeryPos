@@ -13,8 +13,19 @@ import {
     MoreVertical,
     ExternalLink,
     Globe,
-    Loader2
+    Loader2,
+    BarChart3
 } from "lucide-react";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Cell
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +40,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { fetchBranches, createBranch, createUser } from "../../api/index.js";
+import { fetchBranches, createBranch, createUser, fetchDashboardDetails } from "../../api/index.js";
 import { users as mockUsers } from "@/lib/mockData";
 
 interface Branch {
@@ -49,6 +60,7 @@ interface Branch {
 export default function SuperAdminOverview() {
     const navigate = useNavigate();
     const [branches, setBranches] = useState<Branch[]>([]);
+    const [dashboardData, setDashboardData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -72,8 +84,12 @@ export default function SuperAdminOverview() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const branchRes = await fetchBranches();
+            const [branchRes, dashboardRes] = await Promise.all([
+                fetchBranches(),
+                fetchDashboardDetails() // Global summary for superadmin
+            ]);
             setBranches(branchRes.data || []);
+            setDashboardData(dashboardRes);
         } catch (err: any) {
             toast.error(err.message || "Failed to load dashboard data");
         } finally {
@@ -187,44 +203,119 @@ export default function SuperAdminOverview() {
                 <div className="card-elevated p-6 space-y-2 border-2 border-slate-50">
                     <div className="flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Network Revenue</h3>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
                             <DollarSign className="h-4 w-4" />
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-2xl font-black">Rs. {(totalRevenue / 100000).toFixed(1)}L</p>
-                        <p className="text-xs text-green-600 font-bold flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" /> +12% from last month
+                        <p className="text-2xl font-black">Rs. {(dashboardData?.total_sales || 0).toLocaleString()}</p>
+                        <p className="text-[10px] text-green-600 font-bold flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" /> Real-time global sales
                         </p>
                     </div>
                 </div>
 
                 <div className="card-elevated p-6 space-y-2 border-2 border-slate-50">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Active Branches</h3>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Branches</h3>
+                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
                             <Store className="h-4 w-4" />
                         </div>
                     </div>
-                    <p className="text-2xl font-black text-slate-900">{loading ? "---" : `${activeBranches} / ${branches.length}`}</p>
+                    <div className="space-y-1">
+                        <p className="text-2xl font-black text-slate-900">{loading ? "---" : (dashboardData?.total_branch || branches.length)}</p>
+                        <p className="text-[10px] text-slate-400 font-bold">Active enterprise nodes</p>
+                    </div>
                 </div>
 
                 <div className="card-elevated p-6 space-y-2 border-2 border-slate-50">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Workforce</h3>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Network Users</h3>
+                        <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600">
                             <Users className="h-4 w-4" />
                         </div>
                     </div>
-                    <p className="text-2xl font-black text-slate-900">{loading ? "---" : `${totalStaff} Staff`}</p>
+                    <div className="space-y-1">
+                        <p className="text-2xl font-black text-slate-900">{loading ? "---" : (dashboardData?.total_user || 0)} Users</p>
+                        <p className="text-[10px] text-slate-400 font-bold">Combined workforce</p>
+                    </div>
                 </div>
 
                 <div className="card-elevated p-6 space-y-2 gradient-warm text-white border-none shadow-lg shadow-primary/20">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase tracking-widest opacity-80">Top Performer</h3>
+                        <h3 className="text-xs font-black uppercase tracking-widest opacity-80">Total Orders</h3>
                         <TrendingUp className="h-5 w-5" />
                     </div>
-                    <p className="text-xl font-black truncate">{branches.length > 0 ? branches[0].name : "N/A"}</p>
+                    <div className="space-y-1">
+                        <p className="text-2xl font-black">{dashboardData?.total_count_order || 0}</p>
+                        <p className="text-[10px] font-bold opacity-90 uppercase tracking-widest">Across all branches</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Weekly Sales Chart */}
+            <div className="card-elevated p-6 md:p-8 border-2 border-slate-50 rounded-[2.5rem]">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Weekly Sales Trend</h3>
+                        <p className="text-xs text-muted-foreground font-medium">Performance tracking for the current cycle</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                        <BarChart3 className="h-5 w-5" />
+                    </div>
+                </div>
+
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={(() => {
+                                const ws = dashboardData?.Weekely_Sales || dashboardData?.Weekly_sales || {};
+                                return [
+                                    { day: 'Mon', sales: ws.monday || 0 },
+                                    { day: 'Tue', sales: ws.tuesday || 0 },
+                                    { day: 'Wed', sales: ws.wednesday || 0 },
+                                    { day: 'Thu', sales: ws.thursday || 0 },
+                                    { day: 'Fri', sales: ws.friday || 0 },
+                                    { day: 'Sat', sales: ws.saturday || 0 },
+                                    { day: 'Sun', sales: ws.sunday || 0 },
+                                ];
+                            })()}
+                            margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis
+                                dataKey="day"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                dy={10}
+                            />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                tickFormatter={(value) => `Rs.${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value}`}
+                            />
+                            <Tooltip
+                                cursor={{ fill: '#f8fafc' }}
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                formatter={(value: number) => [`Rs.${value.toLocaleString()}`, 'Sales']}
+                            />
+                            <Bar
+                                dataKey="sales"
+                                radius={[6, 6, 0, 0]}
+                                barSize={32}
+                            >
+                                {[0, 1, 2, 3, 4, 5, 6].map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${index}`}
+                                        fill={index === new Date().getDay() - 1 ? 'hsl(var(--primary))' : '#e2e8f0'}
+                                        className="transition-all duration-500"
+                                    />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 

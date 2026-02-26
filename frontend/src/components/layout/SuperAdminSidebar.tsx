@@ -18,7 +18,6 @@ const navItems = [
     { icon: Store, label: "All Branches", path: "/super-admin/branches" },
     { icon: BarChart3, label: "Global Analytics", path: "/super-admin/analytics" },
     { icon: Users, label: "Admin Access", path: "/super-admin/access" },
-    { icon: Settings, label: "HQ Settings", path: "/super-admin/settings" },
 ];
 
 interface SuperAdminSidebarProps {

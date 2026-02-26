@@ -83,8 +83,10 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const data = await fetchInvoices();
+      // Sort by ID descending (newest first)
+      const sorted = Array.isArray(data) ? [...data].sort((a: any, b: any) => b.id - a.id) : [];
       // Show only top 5 recent
-      setRecentOrders(data.slice(0, 5));
+      setRecentOrders(sorted.slice(0, 5));
     } catch (err: any) {
       // Slient fail for dashboard recent orders if it's not the primary focus
       console.error("Dashboard recent orders failed:", err);

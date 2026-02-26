@@ -24,7 +24,6 @@ const navItems = [
   { icon: ChefHat, label: "Staff", path: "/admin/dashboard/users" },
   { icon: FileBarChart, label: "Reports", path: "/admin/dashboard/reports" },
   { icon: UtensilsCrossed, label: "Table Management", path: "/admin/dashboard/tables" },
-  { icon: Settings, label: "Settings", path: "/admin/dashboard/settings" },
 ];
 
 interface AdminSidebarProps {

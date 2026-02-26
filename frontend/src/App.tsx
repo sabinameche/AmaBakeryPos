@@ -121,7 +121,6 @@ const App = () => (
             <Route path="/super-admin/branches" element={<SuperAdminBranches />} />
             <Route path="/super-admin/analytics" element={<SuperAdminAnalytics />} />
             <Route path="/super-admin/access" element={<SuperAdminAccess />} />
-            <Route path="/super-admin/settings" element={<SuperAdminSettings />} />
           </Route>
 
           {/* ✅ WAITER PROTECTED */}
@@ -210,7 +209,6 @@ const App = () => (
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="reports" element={<AdminReports />} />
-            <Route path="settings" element={<AdminSettings />} />
             <Route path="tables" element={<AdminTables />} />
           </Route>
 

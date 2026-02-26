@@ -18,6 +18,7 @@ import {
     X,
     CheckCircle2,
     ChevronRight,
+    ChevronLeft,
     Monitor,
     Coffee,
     Cake,
@@ -25,7 +26,8 @@ import {
     Pizza,
     Sandwich,
     Soup,
-    Pencil
+    Pencil,
+    LayoutDashboard
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -340,6 +342,17 @@ export default function CounterPOS() {
             {/* Top Header */}
             <header className="h-16 bg-white border-b px-6 pr-14 flex items-center justify-between shrink-0 z-10">
                 <div className="flex items-center gap-4">
+                    {(operator?.role === "ADMIN" || operator?.role === "BRANCH_MANAGER" || operator?.role === "SUPER_ADMIN") && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate('/admin/dashboard')}
+                            className="mr-2 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5"
+                            title="Back to Admin Dashboard"
+                        >
+                            <LayoutDashboard className="h-6 w-6" />
+                        </Button>
+                    )}
                     <div className="h-12 w-12 rounded-full flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm bg-white p-0.5">
                         <img src="/logos/logo1white.jfif" alt="AMA BAKERY" className="h-full w-full object-cover rounded-full" />
                     </div>
