@@ -87,7 +87,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
 
       {/* Security Info */}
       <div className="p-4 border-t border-sidebar-border space-y-2">
-        {user?.is_superuser && (
+        {user?.role == "ADMIN"   && (
           <button
             onClick={() => {
               localStorage.removeItem('selectedBranch');
