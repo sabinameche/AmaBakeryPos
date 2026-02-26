@@ -304,6 +304,7 @@ export default function CounterPOS() {
                 tax_amount: taxAmount,
                 discount: 0,
                 paid_amount: total,
+                payment_method: paymentMethod === 'cash' ? "CASH" : "QR",
                 items: cart.map(c => ({
                     item_type: "PRODUCT",
                     product: parseInt(c.item.id),

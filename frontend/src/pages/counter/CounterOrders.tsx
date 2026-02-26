@@ -316,6 +316,10 @@ export default function CounterOrders() {
                                                                 {m}
                                                             </span>
                                                         ))
+                                                    ) : order.payment_status === 'PAID' || order.payment_status === 'PARTIAL' ? (
+                                                        <span className="text-[11px] font-black px-2 py-0.5 rounded bg-amber-50 text-amber-600 uppercase tracking-tight">
+                                                            {order.payment_status}
+                                                        </span>
                                                     ) : (
                                                         <span className="text-[11px] font-bold text-slate-300 italic">UNPAID</span>
                                                     )}

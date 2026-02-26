@@ -11,7 +11,8 @@ import {
   LogOut,
   ChefHat,
   Monitor,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 import { getCurrentUser, logout } from "../../auth/auth";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
@@ -27,6 +28,7 @@ const navItems = [
   { icon: Users, label: "Customers", path: "/admin/dashboard/customers" },
   { icon: ChefHat, label: "Staff", path: "/admin/dashboard/users" },
   { icon: FileBarChart, label: "Reports", path: "/admin/dashboard/reports" },
+  { icon: BarChart3, label: "Global Analytics", path: "/admin/dashboard/global-analytics" },
   { icon: UtensilsCrossed, label: "Table Management", path: "/admin/dashboard/tables" },
 ];
 

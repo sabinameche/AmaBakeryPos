@@ -237,6 +237,7 @@ const App = () => {
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="reports" element={<AdminReports />} />
+              <Route path="global-analytics" element={<SuperAdminAnalytics />} />
               <Route path="tables" element={<AdminTables />} />
             </Route>
 

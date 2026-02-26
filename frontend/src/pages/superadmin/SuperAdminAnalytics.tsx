@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     BarChart3,
     TrendingUp,
@@ -9,7 +9,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Filter,
-    Download
+    Download,
+    Loader2
 } from "lucide-react";
 import {
     XAxis,
@@ -26,45 +27,54 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// Mock Data
-const revenueTrendData = [
-    { name: "Mon", revenue: 4500, orders: 120 },
-    { name: "Tue", revenue: 5200, orders: 145 },
-    { name: "Wed", revenue: 4800, orders: 132 },
-    { name: "Thu", revenue: 6100, orders: 168 },
-    { name: "Fri", revenue: 7500, orders: 195 },
-    { name: "Sat", revenue: 8900, orders: 240 },
-    { name: "Sun", revenue: 8200, orders: 210 },
-];
-
-const branchPerformanceData = [
-    { name: "Kathmandu", revenue: 42000 },
-    { name: "Pokhara", revenue: 35000 },
-    { name: "Lalitpur", revenue: 28000 },
-    { name: "Bhaktapur", revenue: 15000 },
-    { name: "Chitwan", revenue: 12000 },
-];
-
-const topSellingItems = [
-    { name: "Croissant", sales: 1200 },
-    { name: "Baguette", sales: 980 },
-    { name: "Muffin", sales: 850 },
-    { name: "Sourdough", sales: 720 },
-    { name: "Cookie", sales: 650 },
-];
-
-const categoryDistribution = [
-    { name: "Bread", value: 45 },
-    { name: "Pastry", value: 30 },
-    { name: "Cakes", value: 15 },
-    { name: "Others", value: 10 },
-];
+import { fetchDashboardDetails } from "@/api/index.js";
+import { toast } from "sonner";
 
 const COLORS = ["#ca8a04", "#854d0e", "#a16207", "#713f12", "#451a03"];
 
 export default function SuperAdminAnalytics() {
-    const [timeRange] = useState("Last 7 Days");
+    const [timeRange] = useState("Daily Pulse");
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<any>(null);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const dashboardData = await fetchDashboardDetails();
+            setData(dashboardData);
+        } catch (error: any) {
+            toast.error(error.message || "Failed to load analytics data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="h-[70vh] w-full flex flex-col items-center justify-center gap-4">
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs animate-pulse">
+                    Aggregating Network Data...
+                </p>
+            </div>
+        );
+    }
+
+    // Transform weekly sales for chart
+    const weeklyRaw = data?.Weekely_Sales || {};
+    const chartData = [
+        { name: "Mon", revenue: weeklyRaw.monday || 0 },
+        { name: "Tue", revenue: weeklyRaw.tuesday || 0 },
+        { name: "Wed", revenue: weeklyRaw.wednesday || 0 },
+        { name: "Thu", revenue: weeklyRaw.thursday || 0 },
+        { name: "Fri", revenue: weeklyRaw.friday || 0 },
+        { name: "Sat", revenue: weeklyRaw.saturday || 0 },
+        { name: "Sun", revenue: weeklyRaw.sunday || 0 },
+    ];
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -79,7 +89,7 @@ export default function SuperAdminAnalytics() {
                         <Calendar className="h-4 w-4 text-slate-400 mr-2" />
                         <span className="text-sm font-bold text-slate-700">{timeRange}</span>
                     </div>
-                    <Button variant="outline" size="icon" className="rounded-xl">
+                    <Button variant="outline" size="icon" className="rounded-xl" onClick={loadData}>
                         <Filter className="h-4 w-4" />
                     </Button>
                     <Button className="rounded-xl bg-slate-900 group">
@@ -93,31 +103,31 @@ export default function SuperAdminAnalytics() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Revenue"
-                    value="Rs. 1,42,500"
-                    change="+12.5%"
+                    value={`Rs. ${data?.total_sales?.toLocaleString() || 0}`}
+                    change="Global"
                     isUp={true}
                     icon={<DollarSign className="h-5 w-5" />}
                     iconBg="bg-amber-50 text-amber-600"
                 />
                 <StatCard
                     title="Total Orders"
-                    value="1,245"
-                    change="+18.2%"
+                    value={data?.total_count_order?.toLocaleString() || 0}
+                    change="Across Units"
                     isUp={true}
                     icon={<ShoppingBag className="h-5 w-5" />}
                     iconBg="bg-blue-50 text-blue-600"
                 />
                 <StatCard
                     title="Average Order Value"
-                    value="Rs. 114"
-                    change="-2.4%"
-                    isUp={false}
+                    value={`Rs. ${data?.average_order_value?.toFixed(0) || 0}`}
+                    change="Net Average"
+                    isUp={true}
                     icon={<TrendingUp className="h-5 w-5" />}
                     iconBg="bg-emerald-50 text-emerald-600"
                 />
                 <StatCard
                     title="Active Branches"
-                    value="12"
+                    value={data?.total_branch || 0}
                     change="Stable"
                     isUp={true}
                     icon={<Users className="h-5 w-5" />}
@@ -141,7 +151,7 @@ export default function SuperAdminAnalytics() {
                     </CardHeader>
                     <CardContent className="px-6 pb-8 h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={revenueTrendData}>
+                            <AreaChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#ca8a04" stopOpacity={0.1} />
@@ -189,15 +199,16 @@ export default function SuperAdminAnalytics() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={categoryDistribution}
+                                        data={data?.sales_per_category || []}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={60}
                                         outerRadius={80}
                                         paddingAngle={8}
-                                        dataKey="value"
+                                        dataKey="total_category_sum"
+                                        nameKey="product__category__name"
                                     >
-                                        {categoryDistribution.map((entry, index) => (
+                                        {(data?.sales_per_category || []).map((_: any, index: number) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
@@ -210,13 +221,13 @@ export default function SuperAdminAnalytics() {
                             </div>
                         </div>
                         <div className="w-full mt-6 space-y-2">
-                            {categoryDistribution.map((cat, idx) => (
-                                <div key={cat.name} className="flex items-center justify-between">
+                            {(data?.sales_per_category || []).map((cat: any, idx: number) => (
+                                <div key={cat.product__category__name} className="flex items-center justify-between">
                                     <div className="flex items-center gap-2.5">
                                         <div className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                        <span className="text-xs font-bold text-slate-600">{cat.name}</span>
+                                        <span className="text-xs font-bold text-slate-600 truncate max-w-[120px]">{cat.product__category__name}</span>
                                     </div>
-                                    <span className="text-xs font-black text-slate-900">{cat.value}%</span>
+                                    <span className="text-xs font-black text-slate-900">{cat.category_percent?.toFixed(1)}%</span>
                                 </div>
                             ))}
                         </div>
@@ -232,28 +243,31 @@ export default function SuperAdminAnalytics() {
                 </CardHeader>
                 <CardContent className="px-8 pb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                        {branchPerformanceData.map((branch, idx) => (
-                            <div key={branch.name} className="space-y-2">
-                                <div className="flex justify-between items-end">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-6 w-6 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100">
-                                            {idx + 1}
+                        {(data?.top_perfomance_branch || []).map((branch: any, idx: number) => {
+                            const maxRevenue = data?.top_perfomance_branch[0]?.total_sales_per_branch || 1;
+                            return (
+                                <div key={branch.name} className="space-y-2">
+                                    <div className="flex justify-between items-end">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-6 w-6 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100">
+                                                {idx + 1}
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-700 capitalize">{branch.name} Branch</span>
                                         </div>
-                                        <span className="text-sm font-bold text-slate-700">{branch.name} Branch</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-400">Total:</span>
+                                            <span className="text-sm font-black text-slate-900">Rs.{branch.total_sales_per_branch?.toLocaleString()}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-400">Total:</span>
-                                        <span className="text-sm font-black text-slate-900">Rs.{branch.revenue.toLocaleString()}</span>
+                                    <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-amber-500 rounded-full opacity-80"
+                                            style={{ width: `${(branch.total_sales_per_branch / maxRevenue) * 100}%` }}
+                                        />
                                     </div>
                                 </div>
-                                <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-amber-500 rounded-full opacity-80"
-                                        style={{ width: `${(branch.revenue / branchPerformanceData[0].revenue) * 100}%` }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
@@ -277,14 +291,14 @@ export default function SuperAdminAnalytics() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {topSellingItems.map((item) => (
-                                    <tr key={item.name} className="group hover:bg-slate-50/50 transition-all">
+                                {(data?.top_selling_items || []).map((item: any) => (
+                                    <tr key={item.product__name} className="group hover:bg-slate-50/50 transition-all">
                                         <td className="py-4 px-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-300 group-hover:bg-amber-50 group-hover:text-amber-600 group-hover:border-amber-100 transition-all capitalize">
-                                                    {item.name.charAt(0)}
+                                                    {item.product__name?.charAt(0)}
                                                 </div>
-                                                <span className="text-sm font-bold text-slate-700">{item.name}</span>
+                                                <span className="text-sm font-bold text-slate-700 capitalize">{item.product__name}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-4 text-center">
@@ -294,7 +308,7 @@ export default function SuperAdminAnalytics() {
                                             </span>
                                         </td>
                                         <td className="py-4 px-4 text-right">
-                                            <span className="text-base font-black text-slate-900 tabular-nums">{item.sales} Units</span>
+                                            <span className="text-base font-black text-slate-900 tabular-nums">{item.total_sold_units} Units</span>
                                         </td>
                                     </tr>
                                 ))}
