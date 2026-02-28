@@ -45,3 +45,25 @@ class ReportDashboardConsumer(AsyncWebsocketConsumer):
         # Called when the socket closes
         await self.channel_layer.group_discard("report_dashboard",self.channel_name)
 
+class KitchenInvoiceDashboard(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = "kitchen_dashboard"
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+            )
+        await self.accept()
+        await self.send(text_data=json.dumps({"message": "Connected successfully!!"}))
+    
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_name)
+        
+    # Receive message from group
+    async def send_order(self, event):
+        order_data = event['order']
+        await self.send(text_data=json.dumps({
+            'order': order_data
+        }))
+    

@@ -3,7 +3,8 @@ from decimal import Decimal
 
 from django.db import transaction
 from rest_framework import serializers
-
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from ..models import Invoice, InvoiceItem  # adjust import path if needed
 from .item_activity_serializer import ItemActivitySerializer
 
