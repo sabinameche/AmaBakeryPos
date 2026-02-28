@@ -45,5 +45,5 @@ urlpatterns = [
         views.admin_reset_password,
         name="admin-reset-password",
     ),
-    path("api/dashboard/stream/", dashboard_sse, name="dashboard-sse"),
+    path("dashboard/stream/", dashboard_sse, name="dashboard-sse"),
 ]
