@@ -1,4 +1,8 @@
-from api.views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
+from api.views import (
+    CookieTokenObtainPairView,
+    CookieTokenRefreshView,
+    LogoutView,
+)
 from django.contrib import admin
 from django.urls import include, path
 

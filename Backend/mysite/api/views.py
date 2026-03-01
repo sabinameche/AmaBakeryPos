@@ -2,6 +2,8 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes  # ADD THIS IMPORT
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import AllowAny
+from django.utils import timezone
 
 from .serializer_dir.users_serializer import (
     ChangePasswordSerializer,
@@ -21,6 +23,19 @@ from .views_dir.payment_view import PaymentClassView
 # custom
 from .views_dir.product_view import ProductViewClass
 from .views_dir.users_view import UserViewClass
+
+
+@api_view(['GET','HEAD'])
+@permission_classes([AllowAny])  # Allow anyone to test
+def test_rate_limit(request):
+    return Response({
+        'message': 'Rate limit test',
+        'timestamp': timezone.now().isoformat(),
+        'user': str(request.user),
+        'authenticated': request.user.is_authenticated
+    })
+
+
 
 
 @api_view(["POST"])

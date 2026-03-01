@@ -46,4 +46,5 @@ urlpatterns = [
         name="admin-reset-password",
     ),
     path("dashboard/stream/", dashboard_sse, name="dashboard-sse"),
+    path("test-rate-limit/", views.test_rate_limit, name="test-rate-limit"),
 ]
