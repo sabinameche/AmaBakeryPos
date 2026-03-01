@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fetchCustomers, createCustomer } from "@/api/index.js";
 import { cn } from "@/lib/utils";
+import { getCurrentUser } from "@/auth/auth";
 
 interface Customer {
     id: number;
@@ -62,10 +63,17 @@ export function CustomerSelector({ onSelect, selectedCustomerId }: CustomerSelec
 
         setSubmitting(true);
         try {
-            const result = await createCustomer({
+            const user = getCurrentUser();
+            const payload: any = {
                 name: newName,
                 phone: newPhone
-            });
+            };
+
+            if (user?.branch_id) {
+                payload.branch = user.branch_id;
+            }
+
+            const result = await createCustomer(payload);
             toast.success("Customer created and selected");
 
             // Add to local list and select

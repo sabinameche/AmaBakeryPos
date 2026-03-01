@@ -15,7 +15,7 @@ import {
     Loader2,
     Trash2
 } from "lucide-react";
-import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer, fetchInvoicesByCustomer } from "../../api/index.js";
+import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer, fetchInvoicesByCustomer, fetchBranches } from "../../api/index.js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { getCurrentUser } from "@/auth/auth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 // Define interface matching local needs but populated from API
 interface Customer {
@@ -56,7 +58,6 @@ export default function AdminCustomers() {
     const [loadingHistory, setLoadingHistory] = useState(false);
     const currentUser = getCurrentUser();
     const branchId = currentUser?.branch_id ?? null;
-
     // Edit Customer State
     const [editCustomer, setEditCustomer] = useState<{
         name: string;
@@ -64,6 +65,9 @@ export default function AdminCustomers() {
         phone: string;
         address: string;
     } | null>(null);
+
+    const [branches, setBranches] = useState<{ id: number; name: string }[]>([]);
+    const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
     // New Customer State
     const [newCustomer, setNewCustomer] = useState({
@@ -75,7 +79,19 @@ export default function AdminCustomers() {
 
     useEffect(() => {
         loadCustomers();
+        if ((currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && !branchId) {
+            loadBranches();
+        }
     }, [branchId]);
+
+    const loadBranches = async () => {
+        try {
+            const res = await fetchBranches();
+            setBranches(res.data || []);
+        } catch (err) {
+            console.error("Failed to load branches", err);
+        }
+    };
 
     const loadCustomers = async () => {
         setLoading(true);
@@ -133,16 +149,26 @@ export default function AdminCustomers() {
             return;
         }
 
+        // If SuperAdmin/Admin at HQ, branch selection is required
+        if ((currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && !branchId && !selectedBranchId) {
+            toast.error("Please select a branch");
+            return;
+        }
+
         setCreating(true);
         try {
             const payload: any = { ...newCustomer };
             if (branchId) {
                 payload.branch = branchId;
+            } else if (selectedBranchId) {
+                payload.branch = parseInt(selectedBranchId);
             }
+
             await createCustomer(payload);
             toast.success("Customer created successfully");
             setIsAddModalOpen(false);
             setNewCustomer({ name: "", email: "", phone: "", address: "" }); // Reset form
+            setSelectedBranchId(""); // Reset branch selection
             loadCustomers(); // Refresh list
         } catch (err: any) {
             toast.error(err.message || "Failed to create customer");
@@ -558,6 +584,28 @@ export default function AdminCustomers() {
                                     onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
                                 />
                             </div>
+
+                            {/* Branch Selection for Admins at HQ */}
+                            {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && !branchId && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Assign to Branch <span className="text-red-500">*</span></Label>
+                                    <Select
+                                        value={selectedBranchId}
+                                        onValueChange={setSelectedBranchId}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a branch" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {branches.map((b) => (
+                                                <SelectItem key={b.id} value={b.id.toString()}>
+                                                    {b.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
                         <div className="flex gap-3 pt-4">
                             <Button variant="outline" className="flex-1" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>

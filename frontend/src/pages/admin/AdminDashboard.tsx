@@ -202,7 +202,6 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground">Welcome back, {user?.name || "Admin"}! Here's what's happening at your branch today.</p>
         </div>
       </div>
 

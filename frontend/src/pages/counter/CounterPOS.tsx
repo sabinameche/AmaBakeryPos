@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { logout, getCurrentUser } from "../../auth/auth";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { CustomerSelector } from "@/components/pos/CustomerSelector";
+import { FloorSelector } from "@/components/pos/FloorSelector";
 import { fetchProducts, fetchCategories, createInvoice, fetchInvoices } from "@/api/index.js";
 import { MenuItem, User as UserType } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,8 @@ export default function CounterPOS() {
 
     // Billing States
     const [customer, setCustomer] = useState<any>(null);
+    const [selectedFloor, setSelectedFloor] = useState<any>(null);
+    const [tableNo, setTableNo] = useState<string>("1");
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "qr" | "online" | null>(null);
     const [cashReceived, setCashReceived] = useState("");
     const [paidAmount, setPaidAmount] = useState(0);
@@ -301,6 +304,8 @@ export default function CounterPOS() {
             const invoiceData = {
                 branch: user?.branch_id,
                 customer: customer?.id || null,
+                floor: selectedFloor?.id || null,
+                table_no: parseInt(tableNo) || 1,
                 invoice_type: "SALE",
                 description: "Counter Sale",
                 tax_amount: taxAmount,
@@ -331,6 +336,8 @@ export default function CounterPOS() {
     const resetOrder = () => {
         setCart([]);
         setCustomer(null);
+        setSelectedFloor(null);
+        setTableNo("1");
         setPaymentMethod(null);
         setCashReceived("");
         setShowSuccessModal(false);
@@ -408,6 +415,48 @@ export default function CounterPOS() {
 
                 {/* Left Side: Menu Selection */}
                 <section className="flex-1 flex flex-col overflow-hidden p-6 gap-6">
+                    {/* Floor & Table Info Bar */}
+                    <div className="flex flex-col sm:flex-row items-end gap-4 bg-white p-5 rounded-[2rem] border-2 border-slate-200 shadow-sm shrink-0">
+                        <div className="flex-1 w-full space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Location / Floor</Label>
+                            <div className="relative">
+                                <FloorSelector
+                                    selectedFloorId={selectedFloor?.id}
+                                    onSelect={(f) => {
+                                        setSelectedFloor(f);
+                                        if (f) setTableNo("1");
+                                    }}
+                                    compact={true}
+                                />
+                            </div>
+                        </div>
+                        <div className="w-full sm:w-40 space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Table Number</Label>
+                            <div className="flex items-center gap-3 bg-slate-50 p-1 px-3 rounded-xl border h-11">
+                                <button
+                                    onClick={() => setTableNo(prev => Math.max(1, parseInt(prev) - 1).toString())}
+                                    className="h-8 w-8 flex items-center justify-center hover:text-primary transition-colors bg-white rounded-lg shadow-sm border"
+                                >
+                                    <Minus className="h-4 w-4" />
+                                </button>
+                                <Input
+                                    value={tableNo}
+                                    onChange={(e) => setTableNo(e.target.value)}
+                                    className="w-12 text-center font-bold border-none bg-transparent h-8 focus-visible:ring-0 text-base"
+                                />
+                                <button
+                                    onClick={() => {
+                                        const max = selectedFloor?.table_count || 100;
+                                        setTableNo(prev => Math.min(max, parseInt(prev) + 1).toString());
+                                    }}
+                                    className="h-8 w-8 flex items-center justify-center hover:text-primary transition-colors bg-white rounded-lg shadow-sm border"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Search & Categories */}
                     <div className="flex flex-col gap-4 shrink-0">
                         <div className="relative">
@@ -638,9 +687,9 @@ export default function CounterPOS() {
             {/* Checkout Dialog */}
             <Dialog open={showCheckoutModal} onOpenChange={setShowCheckoutModal}>
                 <DialogContent className="max-w-[700px] p-0 overflow-hidden border-none shadow-3xl rounded-[2.5rem]">
-                    <div className="flex h-[500px]">
+                    <div className="flex h-[600px]">
                         {/* Checkout Info */}
-                        <div className="flex-1 p-10 space-y-8">
+                        <div className="flex-1 p-10 space-y-8 overflow-y-auto custom-scrollbar">
                             <div>
                                 <h2 className="text-3xl font-black text-slate-800 mb-2">Checkout</h2>
                                 <p className="text-sm text-slate-400 font-medium">Finalize the order and take payment</p>

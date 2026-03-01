@@ -149,11 +149,23 @@ ASGI_APPLICATION = "mysite.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "amabakery_db",
+        "USER": "amabakery_user",
+        "PASSWORD": "ae7a754d3a0d0a81f3da06b4b6e3b05204e024b2c24e55bf5f541bd4df8fdfad",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
+
+# settings.py - temporarily use SQLite
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
