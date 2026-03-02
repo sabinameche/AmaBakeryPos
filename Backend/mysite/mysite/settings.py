@@ -45,9 +45,10 @@ IS_RAILWAY = bool(RAILWAY_PUBLIC_DOMAIN or os.environ.get("RAILWAY_ENVIRONMENT")
 
 # ALLOWED_HOSTS
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    ".railway.app",
+    '*'
+    # "localhost",
+    # "127.0.0.1",
+    # ".railway.app",
 ]
 
 if RAILWAY_PUBLIC_DOMAIN:
