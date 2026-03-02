@@ -12,9 +12,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 import sys
+import urllib.parse
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 import redis
 from dotenv import load_dotenv
 
@@ -41,24 +43,47 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 if DEBUG:
     ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 else:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+    # Get Railway domain from environment
+    RAILWAY_STATIC_URL = os.getenv("RAILWAY_STATIC_URL", "")
+    RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    
+    allowed_hosts = os.getenv("ALLOWED_HOSTS", "").split(",")
+    
+    # Add Railway domains
+    if RAILWAY_STATIC_URL:
+        allowed_hosts.append(RAILWAY_STATIC_URL)
+    if RAILWAY_PUBLIC_DOMAIN:
+        allowed_hosts.append(RAILWAY_PUBLIC_DOMAIN)
+    
+    # Add wildcard for Railway
+    allowed_hosts.append(".railway.app")
+    
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts if host.strip()]
 
 # ==============================================================================
 # REDIS/VALKEY CONFIGURATION
 # ==============================================================================
 
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
-REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+# Get Redis URL from environment (Railway provides REDIS_URL)
+REDIS_URL = os.getenv("REDIS_URL")
+
+if REDIS_URL:
+    # Parse Redis URL for components
+    parsed = urllib.parse.urlparse(REDIS_URL)
+    REDIS_HOST = parsed.hostname or "127.0.0.1"
+    REDIS_PORT = parsed.port or 6379
+    REDIS_PASSWORD = parsed.password or ""
+else:
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+    REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 # Test Redis connection (but don't run during migrations/collectstatic)
 if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic"]):
     try:
-        redis_client = redis.Redis(
-            host=REDIS_HOST,
-            port=int(REDIS_PORT),
-            password=REDIS_PASSWORD if REDIS_PASSWORD else None,
-            db=0,
+        redis_client = redis.Redis.from_url(
+            REDIS_URL,
             decode_responses=True,
             socket_connect_timeout=5,
         )
@@ -75,9 +100,7 @@ if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstat
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/1"
-        if REDIS_PASSWORD
-        else f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
+        "LOCATION": REDIS_URL + "/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",
@@ -103,14 +126,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                {
-                    "address": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
-                    if REDIS_PASSWORD
-                    else f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
-                    "ssl": False,  # Set to True if using Redis with SSL
-                }
-            ],
+            "hosts": [REDIS_URL + "/0"],
             "capacity": 1500,  # Default channel capacity
             "expiry": 60,  # Message expiry in seconds
         },
@@ -121,6 +137,7 @@ CHANNEL_LAYERS = {
 # DATABASE CONFIGURATION
 # ==============================================================================
 
+# Default to local development
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -135,6 +152,15 @@ DATABASES = {
         },
     }
 }
+
+# Override with Railway's DATABASE_URL if available
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 # ==============================================================================
 # REST FRAMEWORK CONFIGURATION
@@ -242,6 +268,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'api.middleware.RateLimitHeadersMiddleware',
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add this for static files
     "corsheaders.middleware.CorsMiddleware",  # Should be high
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -347,6 +374,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+
+# Whitenoise configuration for static files
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
