@@ -18,3 +18,4 @@ django-filter
 gunicorn
 whitenoise
 dj-database-url
+uvicorn
