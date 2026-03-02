@@ -155,14 +155,17 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    # 'DEFAULT_THROTTLE_RATES': {
-    #     'anon': '100/hour',
-    #     'user': '1000/hour',
-    # },
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "3/minute",  # Changed from 100/hour to 3 per minute
-        "user": "5/minute",  # Changed from 1000/hour to 5 per minute
+
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
     },
+
+    # "DEFAULT_THROTTLE_RATES": {
+    #     "anon": "3/minute",  # Changed from 100/hour to 3 per minute
+    #     "user": "5/minute",  # Changed from 1000/hour to 5 per minute
+    # },
+
     # Pagination
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
