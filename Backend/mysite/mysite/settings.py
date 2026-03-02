@@ -144,8 +144,8 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME", "amabakery_db"),
         "USER": os.getenv("DB_USER", "amabakery_user"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+        # "HOST": os.getenv("DB_HOST", "localhost"),
+        # "PORT": os.getenv("DB_PORT", "5432"),
         "CONN_MAX_AGE": 60,  # Persistent connections
         "OPTIONS": {
             "connect_timeout": 10,
