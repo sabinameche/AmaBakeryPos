@@ -1,4 +1,4 @@
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "https://amabakerypos-production.up.railway.app/";
 const apiBaseUrl = RAW_BASE.replace(/\/+$/, ""); // remove trailing /
 
 // --- POLLING CONFIGURATION ---
