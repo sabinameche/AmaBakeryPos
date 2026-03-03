@@ -6,7 +6,7 @@ export function useOrdersWebSocket(onMessage: MessageHandler) {
   const socketRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    const rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    const rawBase = import.meta.env.VITE_API_BASE_URL || "https://amabakerypos-production.up.railway.app/";
     const httpStripped = rawBase.replace(/\/+$/, "");
     const wsBase = httpStripped.replace(/^http/, "ws");
     const socket = new WebSocket(wsBase + "/ws/orders/");
