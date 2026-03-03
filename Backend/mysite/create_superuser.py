@@ -1,21 +1,33 @@
 import os
 import django
-from django.core.management import call_command
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django.setup()
 
-# Only create if the environment variables are set
-if all(os.environ.get(var) for var in ['DJANGO_SUPERUSER_USERNAME', 'DJANGO_SUPERUSER_PASSWORD']):
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+# Read from environment variables with fallback values
+SUPERUSER_USERNAME = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
+SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
+SUPERUSER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+
+if not SUPERUSER_PASSWORD:
+    print("ERROR: DJANGO_SUPERUSER_PASSWORD environment variable is not set!")
+    exit(1)
+
+# Check if user already exists by username OR email for flexibility
+if not User.objects.filter(username=SUPERUSER_USERNAME).exists():
     try:
-        call_command(
-            'createsuperuser',
-            username=os.environ['DJANGO_SUPERUSER_USERNAME'],
-            email=os.environ.get('DJANGO_SUPERUSER_EMAIL', ''),
-            interactive=False
+        User.objects.create_superuser(
+            username=SUPERUSER_USERNAME,
+            email=SUPERUSER_EMAIL,
+            password=SUPERUSER_PASSWORD
         )
-        print(f"Superuser created successfully!")
+        print(f"Superuser '{SUPERUSER_USERNAME}' created successfully!")
     except Exception as e:
-        print(f"Superuser might already exist or error occurred: {e}")
+        print(f"Error creating superuser: {e}")
+        exit(1)
 else:
-    print("Superuser environment variables not set, skipping creation.")
+    print(f"Superuser '{SUPERUSER_USERNAME}' already exists.")
