@@ -27,36 +27,54 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ==============================================================================
-# SECURITY WARNINGS (Production settings)
+# ENVIRONMENT DETECTION
 # ==============================================================================
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv(
-    "DJANGO_SECRET_KEY", "django-insecure-development-key-change-this"
-)
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # Detect Railway environment
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
 RAILWAY_PRIVATE_DOMAIN = os.environ.get("RAILWAY_PRIVATE_DOMAIN", "")
-IS_RAILWAY = bool(RAILWAY_PUBLIC_DOMAIN or os.environ.get("RAILWAY_ENVIRONMENT"))
+RAILWAY_ENVIRONMENT = os.environ.get("RAILWAY_ENVIRONMENT", "")
+IS_RAILWAY = bool(RAILWAY_PUBLIC_DOMAIN or RAILWAY_ENVIRONMENT)
 
-# ALLOWED_HOSTS
+# Detect development mode
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+IS_DEVELOPMENT = DEBUG and not IS_RAILWAY
+IS_PRODUCTION = not DEBUG or IS_RAILWAY
+
+# ==============================================================================
+# SECURITY WARNINGS
+# ==============================================================================
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY", 
+    "django-insecure-development-key-change-this"
+)
+
+# ==============================================================================
+# ALLOWED HOSTS
+# ==============================================================================
+
 ALLOWED_HOSTS = [
-    '*'
-    # "localhost",
-    # "127.0.0.1",
-    # ".railway.app",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
 ]
 
-if RAILWAY_PUBLIC_DOMAIN:
-    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
-if RAILWAY_PRIVATE_DOMAIN:
-    ALLOWED_HOSTS.append(RAILWAY_PRIVATE_DOMAIN)
+if IS_RAILWAY:
+    ALLOWED_HOSTS.extend([
+        ".railway.app",
+        RAILWAY_PUBLIC_DOMAIN,
+        RAILWAY_PRIVATE_DOMAIN,
+    ])
 
-if DEBUG and not IS_RAILWAY:
+# Add custom domain if set
+CUSTOM_DOMAIN = os.getenv("CUSTOM_DOMAIN", "")
+if CUSTOM_DOMAIN:
+    ALLOWED_HOSTS.append(CUSTOM_DOMAIN)
+
+# In local development, allow all hosts for convenience
+if IS_DEVELOPMENT:
     ALLOWED_HOSTS = ["*"]
 
 # ==============================================================================
@@ -64,99 +82,171 @@ if DEBUG and not IS_RAILWAY:
 # ==============================================================================
 
 # Get Redis URL from environment (Railway provides REDIS_URL)
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = os.getenv("REDIS_URL", "")
+REDIS_TLS_URL = os.getenv("REDIS_TLS_URL", "")  # For secure connections
 
-if REDIS_URL:
-    # Parse Redis URL for components
-    parsed = urllib.parse.urlparse(REDIS_URL)
-    REDIS_HOST = parsed.hostname or "127.0.0.1"
-    REDIS_PORT = parsed.port or 6379
-    REDIS_PASSWORD = parsed.password or ""
-else:
-    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
-    REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
-    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+# Also check for individual Redis settings
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
 
-# Test Redis connection (but don't run during migrations/collectstatic)
-if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic"]):
+# Initialize Redis variables
+REDIS_AVAILABLE = False
+REDIS_SSL = False
+
+# Priority 1: Use REDIS_URL if provided and valid
+if REDIS_URL and (REDIS_URL.startswith(('redis://', 'rediss://', 'unix://'))):
     try:
-        redis_client = redis.Redis.from_url(
-            REDIS_URL,
-            decode_responses=True,
-            socket_connect_timeout=5,
-        )
-        redis_client.ping()
-        print("✅ Redis/Valkey connection successful!")
+        # Parse Redis URL for components
+        parsed = urllib.parse.urlparse(REDIS_URL)
+        REDIS_HOST = parsed.hostname or REDIS_HOST
+        REDIS_PORT = parsed.port or int(REDIS_PORT)
+        REDIS_PASSWORD = parsed.password or REDIS_PASSWORD
+        REDIS_SSL = REDIS_URL.startswith('rediss://')
+        
+        # Test Redis connection
+        if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic", "flush"]):
+            redis_client = redis.Redis.from_url(
+                REDIS_URL,
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_keepalive=True,
+                health_check_interval=30,
+                ssl=REDIS_SSL,
+            )
+            redis_client.ping()
+            print("✅ Redis/Valkey connection successful (using URL)!")
+            REDIS_AVAILABLE = True
     except Exception as e:
-        print(f"⚠️  Redis/Valkey connection failed: {e}")
-        print("⚠️  Continuing without Redis - some features may not work!")
+        print(f"⚠️  Redis URL connection failed: {e}")
+        REDIS_AVAILABLE = False
 
+# Priority 2: If no valid URL, try individual settings
+elif REDIS_HOST and REDIS_PORT:
+    try:
+        # Construct Redis URL from individual settings
+        if REDIS_PASSWORD:
+            # URL encode the password if it contains special characters
+            import urllib.parse
+            encoded_password = urllib.parse.quote(REDIS_PASSWORD, safe='')
+            REDIS_URL = f"redis://:{encoded_password}@{REDIS_HOST}:{REDIS_PORT}"
+        else:
+            REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+        
+        # Test Redis connection
+        if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic", "flush"]):
+            redis_client = redis.Redis(
+                host=REDIS_HOST,
+                port=int(REDIS_PORT),
+                password=REDIS_PASSWORD if REDIS_PASSWORD else None,
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_keepalive=True,
+                health_check_interval=30,
+            )
+            redis_client.ping()
+            print("✅ Redis/Valkey connection successful (using host/port)!")
+            REDIS_AVAILABLE = True
+    except Exception as e:
+        print(f"⚠️  Redis connection failed: {e}")
+        print("⚠️  Continuing without Redis - some features may not work!")
+        REDIS_AVAILABLE = False
+else:
+    print("⚠️  No Redis configuration found - continuing without Redis")
 # ==============================================================================
 # CACHES CONFIGURATION (For rate limiting)
 # ==============================================================================
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL + "/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",
-            "CONNECTION_POOL_CLASS_KWARGS": {
-                "max_connections": 50,
-                "timeout": 20,
+if REDIS_AVAILABLE:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL + "/1" if not REDIS_URL.endswith('/') else REDIS_URL + "1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",
+                "CONNECTION_POOL_CLASS_KWARGS": {
+                    "max_connections": 50,
+                    "timeout": 20,
+                },
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
+                "RETRY_ON_TIMEOUT": True,
+                "MAX_CONNECTIONS": 1000,
             },
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
-            "RETRY_ON_TIMEOUT": True,
-            "MAX_CONNECTIONS": 1000,
-        },
-        "KEY_PREFIX": "amabakery",
-        "TIMEOUT": 300,
+            "KEY_PREFIX": "amabakery",
+            "TIMEOUT": 300,
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
 
 # ==============================================================================
 # CHANNELS CONFIGURATION (WebSockets)
 # ==============================================================================
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL + "/0"],
-            "capacity": 1500,
-            "expiry": 60,
+if REDIS_AVAILABLE:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL + "/0"] if not REDIS_URL.endswith('/') else [REDIS_URL + "0"],
+                "capacity": 1500,
+                "expiry": 60,
+            },
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+
 
 # ==============================================================================
 # DATABASE CONFIGURATION
 # ==============================================================================
 
+# Default database configuration for local development
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME", "amabakery_db"),
         "USER": os.getenv("DB_USER", "amabakery_user"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "CONN_MAX_AGE": 60,
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 60 if IS_PRODUCTION else 0,
         "OPTIONS": {
             "connect_timeout": 10,
         },
     }
 }
 
-# Override with Railway's DATABASE_URL if available
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL:
-    DATABASES["default"] = dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+# Override with Railway's DATABASE_URL if available and valid
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+if DATABASE_URL and DATABASE_URL.startswith(('postgres://', 'postgresql://', 'mysql://')):
+    try:
+        DATABASES["default"] = dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600 if IS_PRODUCTION else 0,
+            conn_health_checks=True,
+            ssl_require=IS_PRODUCTION,
+        )
+        print("✅ Using DATABASE_URL for database configuration")
+    except Exception as e:
+        print(f"⚠️  Failed to parse DATABASE_URL: {e}")
+        print("⚠️  Falling back to local database configuration")
+elif DATABASE_URL:
+    print(f"⚠️  Invalid DATABASE_URL scheme: {DATABASE_URL.split(':')[0]}://")
+    print("⚠️  Falling back to local database configuration")
 
 # ==============================================================================
 # REST FRAMEWORK CONFIGURATION
@@ -192,8 +282,6 @@ REST_FRAMEWORK = {
     ],
     # Versioning
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
-    # Exception handling
-    "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
     # Date formats
     "DATETIME_FORMAT": "%Y-%m-%d %H:%M:%S",
     "DATE_FORMAT": "%Y-%m-%d",
@@ -214,19 +302,9 @@ SIMPLE_JWT = {
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
     "VERIFYING_KEY": None,
-    "AUDIENCE": None,
-    "ISSUER": None,
     "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "TOKEN_TYPE_CLAIM": "token_type",
-    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-    "JTI_CLAIM": "jti",
-    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
 # ==============================================================================
@@ -249,22 +327,25 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
-    "django_redis",
     # Local apps
     "api",
 ]
 
+# Only add django_redis if Redis is available
+if REDIS_AVAILABLE:
+    INSTALLED_APPS.append("django_redis")
+
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # ← MUST BE FIRST
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "api.middleware.RateLimitHeadersMiddleware",  # ← Move your custom middleware down
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",]
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
 
 ROOT_URLCONF = "mysite.urls"
 
@@ -275,6 +356,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -283,7 +365,6 @@ TEMPLATES = [
     },
 ]
 
-# WSGI and ASGI
 WSGI_APPLICATION = "mysite.wsgi.application"
 ASGI_APPLICATION = "mysite.asgi.application"
 
@@ -316,40 +397,26 @@ AUTH_PASSWORD_VALIDATORS = [
 # ==============================================================================
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-
     "http://localhost:3000",
+    "http://localhost:8080",
     "http://127.0.0.1:3000",
-    "https://ama-bakery-pos.vercel.app"
+    "http://127.0.0.1:8080",
+    "https://ama-bakery-pos.vercel.app",
 ]
 
 if RAILWAY_PUBLIC_DOMAIN:
     CORS_ALLOWED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
-if DEBUG and not IS_RAILWAY:
+if CUSTOM_DOMAIN:
+    CORS_ALLOWED_ORIGINS.append(f"https://{CUSTOM_DOMAIN}")
+
+if IS_DEVELOPMENT:
     CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
-]
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
+
+# CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
 
 # ==============================================================================
 # INTERNATIONALIZATION
@@ -368,59 +435,30 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 
-# Whitenoise configuration for static files
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ==============================================================================
-# SECURITY SETTINGS (For Production)
+# SECURITY SETTINGS
 # ==============================================================================
 
-# Always set proxy header if on Railway (even in DEBUG mode)
-# Railway terminates SSL at the proxy and forwards HTTP to your container
 if IS_RAILWAY:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-if not DEBUG:
-    # Tell Django about Railway's reverse proxy
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-    # ❌ DO NOT enable SECURE_SSL_REDIRECT on Railway
-    # Railway's proxy already handles HTTPS redirection for you
-    # Enabling this causes an infinite redirect loop because:
-    # Railway proxy → HTTP → Django → redirect to HTTPS → Railway proxy → HTTP → loop
-    SECURE_SSL_REDIRECT = False
-
+if IS_PRODUCTION:
+    SECURE_SSL_REDIRECT = False  # Railway handles SSL
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
-
-    # HSTS settings
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
-    # Session settings
-    SESSION_COOKIE_AGE = 1209600  # 2 weeks
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-    SESSION_SAVE_EVERY_REQUEST = False
-
-    # CSRF settings
     CSRF_COOKIE_HTTPONLY = True
-    CSRF_COOKIE_AGE = 31449600  # 1 year
-
-    # CSRF_TRUSTED_ORIGINS — must include your Railway domain
-    CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
-    if RAILWAY_PUBLIC_DOMAIN:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
 # ==============================================================================
 # LOGGING CONFIGURATION
@@ -442,12 +480,12 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose" if DEBUG else "simple",
+            "formatter": "verbose" if IS_DEVELOPMENT else "simple",
         },
     },
     "root": {
         "handlers": ["console"],
-        "level": "INFO",
+        "level": "DEBUG" if IS_DEVELOPMENT else "INFO",
     },
     "loggers": {
         "django": {
@@ -455,24 +493,8 @@ LOGGING = {
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "WARNING",  # Shows 400 and 500 errors in logs
-            "propagate": False,
-        },
     },
 }
-
-# Only add file logging in local dev (Railway has ephemeral filesystem)
-if not IS_RAILWAY and not DEBUG:
-    logs_dir = BASE_DIR / "logs"
-    logs_dir.mkdir(exist_ok=True)
-    LOGGING["handlers"]["file"] = {
-        "class": "logging.FileHandler",
-        "filename": logs_dir / "django.log",
-        "formatter": "verbose",
-    }
-    LOGGING["root"]["handlers"].append("file")
 
 # ==============================================================================
 # DEFAULT PRIMARY KEY FIELD TYPE
@@ -481,10 +503,47 @@ if not IS_RAILWAY and not DEBUG:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ==============================================================================
+# CREATE .env FILE IF IT DOESN'T EXIST
+# ==============================================================================
+
+env_file = BASE_DIR / '.env'
+if not env_file.exists() and IS_DEVELOPMENT:
+    with open(env_file, 'w') as f:
+        f.write("""# Django Settings
+DJANGO_SECRET_KEY=your-secret-key-here-change-this
+DJANGO_DEBUG=True
+
+# Database Settings (Local PostgreSQL)
+DB_NAME=amabakery_db
+DB_USER=amabakery_user
+DB_PASSWORD=your_password_here
+DB_HOST=localhost
+DB_PORT=5432
+
+# Redis Settings (Optional - comment out if not using)
+# REDIS_URL=redis://localhost:6379
+
+# CORS Settings
+CORS_ALLOW_ALL=True
+""")
+    print("✅ Created .env file with default values. Please update it with your actual credentials!")
+
+# ==============================================================================
 # IMPORT LOCAL SETTINGS (for development overrides)
 # ==============================================================================
 
-try:
-    from .local_settings import *  # noqa: F401, F403
-except ImportError:
-    pass
+if IS_DEVELOPMENT:
+    try:
+        from .local_settings import *  # noqa
+        print("✅ Loaded local settings overrides")
+    except ImportError:
+        pass
+
+# Print environment info on startup
+if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic", "flush"]):
+    print(f"\n{'='*50}")
+    print(f"Environment: {'Railway' if IS_RAILWAY else 'Production' if IS_PRODUCTION else 'Development'}")
+    print(f"Debug Mode: {DEBUG}")
+    print(f"Database: {'DATABASE_URL' if DATABASE_URL else 'Local PostgreSQL'}")
+    print(f"Redis: {'Available' if REDIS_AVAILABLE else 'Not Available'}")
+    print(f"{'='*50}\n")
