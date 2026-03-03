@@ -12,9 +12,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 import sys
+import urllib.parse
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 import redis
 from dotenv import load_dotenv
 
@@ -29,7 +31,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# For production, always use environment variable
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY", "django-insecure-development-key-change-this"
 )
@@ -37,28 +38,51 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-# ALLOWED_HOSTS - Configure properly for production
-if DEBUG:
-    ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
-else:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+# Detect Railway environment
+RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
+RAILWAY_PRIVATE_DOMAIN = os.environ.get("RAILWAY_PRIVATE_DOMAIN", "")
+IS_RAILWAY = bool(RAILWAY_PUBLIC_DOMAIN or os.environ.get("RAILWAY_ENVIRONMENT"))
+
+# ALLOWED_HOSTS
+ALLOWED_HOSTS = [
+    '*'
+    # "localhost",
+    # "127.0.0.1",
+    # ".railway.app",
+]
+
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+if RAILWAY_PRIVATE_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PRIVATE_DOMAIN)
+
+if DEBUG and not IS_RAILWAY:
+    ALLOWED_HOSTS = ["*"]
 
 # ==============================================================================
 # REDIS/VALKEY CONFIGURATION
 # ==============================================================================
 
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
-REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+# Get Redis URL from environment (Railway provides REDIS_URL)
+REDIS_URL = os.getenv("REDIS_URL")
+
+if REDIS_URL:
+    # Parse Redis URL for components
+    parsed = urllib.parse.urlparse(REDIS_URL)
+    REDIS_HOST = parsed.hostname or "127.0.0.1"
+    REDIS_PORT = parsed.port or 6379
+    REDIS_PASSWORD = parsed.password or ""
+else:
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+    REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 # Test Redis connection (but don't run during migrations/collectstatic)
 if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstatic"]):
     try:
-        redis_client = redis.Redis(
-            host=REDIS_HOST,
-            port=int(REDIS_PORT),
-            password=REDIS_PASSWORD if REDIS_PASSWORD else None,
-            db=0,
+        redis_client = redis.Redis.from_url(
+            REDIS_URL,
             decode_responses=True,
             socket_connect_timeout=5,
         )
@@ -75,9 +99,7 @@ if not any(arg in sys.argv for arg in ["migrate", "makemigrations", "collectstat
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/1"
-        if REDIS_PASSWORD
-        else f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
+        "LOCATION": REDIS_URL + "/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",
@@ -91,7 +113,7 @@ CACHES = {
             "MAX_CONNECTIONS": 1000,
         },
         "KEY_PREFIX": "amabakery",
-        "TIMEOUT": 300,  # 5 minutes default timeout
+        "TIMEOUT": 300,
     }
 }
 
@@ -103,16 +125,9 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                {
-                    "address": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
-                    if REDIS_PASSWORD
-                    else f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
-                    "ssl": False,  # Set to True if using Redis with SSL
-                }
-            ],
-            "capacity": 1500,  # Default channel capacity
-            "expiry": 60,  # Message expiry in seconds
+            "hosts": [REDIS_URL + "/0"],
+            "capacity": 1500,
+            "expiry": 60,
         },
     },
 }
@@ -127,14 +142,21 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME", "amabakery_db"),
         "USER": os.getenv("DB_USER", "amabakery_user"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 60,  # Persistent connections
+        "CONN_MAX_AGE": 60,
         "OPTIONS": {
             "connect_timeout": 10,
         },
     }
 }
+
+# Override with Railway's DATABASE_URL if available
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES["default"] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 # ==============================================================================
 # REST FRAMEWORK CONFIGURATION
@@ -155,17 +177,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour',
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
     },
-
-    # "DEFAULT_THROTTLE_RATES": {
-    #     "anon": "3/minute",  # Changed from 100/hour to 3 per minute
-    #     "user": "5/minute",  # Changed from 1000/hour to 5 per minute
-    # },
-
     # Pagination
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -240,16 +255,16 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'api.middleware.RateLimitHeadersMiddleware',
+    "api.middleware.RateLimitHeadersMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # Should be high
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Custom middleware (if any)
 ]
 
 ROOT_URLCONF = "mysite.urls"
@@ -301,14 +316,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # CORS CONFIGURATION
 # ==============================================================================
 
-if DEBUG:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+if RAILWAY_PUBLIC_DOMAIN:
+    CORS_ALLOWED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
+
+if DEBUG and not IS_RAILWAY:
     CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",  # React dev server
-        "http://127.0.0.1:3000",
-        "https://yourdomain.com",  # Your production domain
-    ]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -348,6 +365,9 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 
+# Whitenoise configuration for static files
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -355,9 +375,21 @@ MEDIA_ROOT = BASE_DIR / "media"
 # SECURITY SETTINGS (For Production)
 # ==============================================================================
 
+# Always set proxy header if on Railway (even in DEBUG mode)
+# Railway terminates SSL at the proxy and forwards HTTP to your container
+if IS_RAILWAY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 if not DEBUG:
-    # HTTPS settings
-    SECURE_SSL_REDIRECT = True
+    # Tell Django about Railway's reverse proxy
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # ❌ DO NOT enable SECURE_SSL_REDIRECT on Railway
+    # Railway's proxy already handles HTTPS redirection for you
+    # Enabling this causes an infinite redirect loop because:
+    # Railway proxy → HTTP → Django → redirect to HTTPS → Railway proxy → HTTP → loop
+    SECURE_SSL_REDIRECT = False
+
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -378,7 +410,14 @@ if not DEBUG:
     # CSRF settings
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_AGE = 31449600  # 1 year
-    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+    # CSRF_TRUSTED_ORIGINS — must include your Railway domain
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    if RAILWAY_PUBLIC_DOMAIN:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
 # ==============================================================================
 # LOGGING CONFIGURATION
@@ -402,11 +441,6 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose" if DEBUG else "simple",
         },
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
-            "formatter": "verbose",
-        },
     },
     "root": {
         "handlers": ["console"],
@@ -420,19 +454,22 @@ LOGGING = {
         },
         "django.request": {
             "handlers": ["console"],
-            "level": "ERROR",
+            "level": "WARNING",  # Shows 400 and 500 errors in logs
             "propagate": False,
         },
     },
 }
 
-# ==============================================================================
-# CREATE LOGS DIRECTORY IF IT DOESN'T EXIST
-# ==============================================================================
-
-if not DEBUG:
+# Only add file logging in local dev (Railway has ephemeral filesystem)
+if not IS_RAILWAY and not DEBUG:
     logs_dir = BASE_DIR / "logs"
     logs_dir.mkdir(exist_ok=True)
+    LOGGING["handlers"]["file"] = {
+        "class": "logging.FileHandler",
+        "filename": logs_dir / "django.log",
+        "formatter": "verbose",
+    }
+    LOGGING["root"]["handlers"].append("file")
 
 # ==============================================================================
 # DEFAULT PRIMARY KEY FIELD TYPE
@@ -445,6 +482,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ==============================================================================
 
 try:
-    from .local_settings import *
+    from .local_settings import *  # noqa: F401, F403
 except ImportError:
     pass

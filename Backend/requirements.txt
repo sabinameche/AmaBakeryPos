@@ -1,8 +1,6 @@
-django
+Django
 djangorestframework
 environs
-asgiref
-Django
 django-cors-headers
 djangorestframework-simplejwt
 PyJWT
@@ -14,7 +12,10 @@ python-dateutil
 channels
 channels-redis
 daphne
-psycopg2-binary
 redis
 django-redis
 django-filter
+gunicorn
+whitenoise
+dj-database-url
+uvicorn
