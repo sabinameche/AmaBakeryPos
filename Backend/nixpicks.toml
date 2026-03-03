@@ -9,8 +9,6 @@ nixPkgs = [
 
 [environments]
 PYTHON_VERSION = "3.10.12"  # Specify a different version
-DJANGO_SETTINGS_MODULE = "mysite.settings"
-DEBUG = "False"
 
 
 [phases.install]
