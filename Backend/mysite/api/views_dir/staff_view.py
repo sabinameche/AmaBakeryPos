@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import date
 
 from ..models import Invoice, User
 
@@ -31,6 +32,8 @@ class StaffReportViewClass(APIView):
     def get(self, request, branch_id=None):
         role = self.get_user_role(request.user)
         my_branch = getattr(request.user, "branch", None)
+        today = date.today()
+        print("aaja ko din/?",today)
 
         if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
             return Response(
@@ -80,8 +83,11 @@ class StaffReportViewClass(APIView):
 
             total_orders = invoices_all.count()
             total_sales = (
-                invoices_all.aggregate(total=Sum("total_amount"))["total"] or 0
+                invoices_all.filter(created_at__date = today).aggregate(total=Sum("total_amount"))["total"] or 0
             )
+            total_cash_in_hand = invoices_all.filter(
+                            received_by_waiter__user_type = "WAITER",
+                            payment_status = "PARTIAL").values('received_by_waiter__id').aggregate(total_cash_in_hand = Sum('total_amount'))['total_cash_in_hand'] or 0
 
             # Current month breakdown
             invoices_month = invoices_all.filter(
@@ -92,7 +98,7 @@ class StaffReportViewClass(APIView):
             current_month_sales = (
                 invoices_month.aggregate(total=Sum("total_amount"))["total"] or 0
             )
-
+            
             staff_data.append(
                 {
                     "id": staff.id,
@@ -101,10 +107,12 @@ class StaffReportViewClass(APIView):
                     "role": staff.user_type,
                     "total_orders": total_orders,
                     "total_sales": float(total_sales),
+                    "total_cash_in_hand": float(total_cash_in_hand),
                     "current_month_orders": current_month_orders,
                     "current_month_sales": float(current_month_sales),
                 }
             )
+     
 
         # Sort by total_orders descending
         staff_data.sort(key=lambda x: x["total_orders"], reverse=True)
