@@ -365,15 +365,15 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Kitchen distribution pie chart */}
+        {/* Payment Status distribution pie chart */}
         <div className="card-elevated p-8 text-center">
-          <h3 className="text-lg font-black uppercase tracking-tight mb-6 capitalize">{timeframe} Kitchen Mix</h3>
+          <h3 className="text-lg font-black uppercase tracking-tight mb-6 capitalize">{timeframe} Payment Status</h3>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={(dashboardData?.sales_by_kitchen_type || []).map((item: any) => ({
-                    name: (item.product__category__kitchentype__name || 'Other').toLowerCase(),
+                  data={(dashboardData?.sales_by_status || []).map((item: any) => ({
+                    name: (item.payment_status || 'Other').toLowerCase(),
                     value: parseFloat(String(item.total_amount || 0)) || 0
                   }))}
                   dataKey="value"
@@ -382,8 +382,8 @@ export default function AdminDashboard() {
                   paddingAngle={5}
                   stroke="none"
                 >
-                  {(dashboardData?.sales_by_kitchen_type || []).map((_: any, index: number) => (
-                    <Cell key={`cell-kt-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />
+                  {(dashboardData?.sales_by_status || []).map((_: any, index: number) => (
+                    <Cell key={`cell-status-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: any) => [`Rs.${Number(value).toLocaleString()}`, 'Total']} />

@@ -278,6 +278,7 @@ def report_dashboard(my_branch=None, request=None):
     sales_by_category = get_distribution(InvoiceItem, period_filter_ii, "product__category__name", "category_total_sales")
     sales_by_kitchen = get_distribution(InvoiceItem, period_filter_ii, "product__category__kitchentype__name")
     sales_by_payment = get_distribution(Payment, period_filter_p, "payment_method")
+    sales_by_status = list(Invoice.objects.filter(**base_filter).values("payment_status").annotate(total_amount=Coalesce(Sum("total_amount"), Value(0.0, output_field=DecimalField()))).order_by("-total_amount"))
 
     top_selling = list(InvoiceItem.objects.filter(**period_filter_ii).values("product__name").annotate(total_orders=Sum("quantity")).annotate(total_sales=Sum(ExpressionWrapper(F("quantity") * F("unit_price") - F("discount_amount"), output_field=DecimalField(max_digits=12, decimal_places=2)))).order_by("-total_orders")[:5])
 
@@ -292,6 +293,7 @@ def report_dashboard(my_branch=None, request=None):
         "sales_by_category": sales_by_category,
         "sales_by_kitchen_type": sales_by_kitchen,
         "sales_by_payment_method": sales_by_payment,
+        "sales_by_status": sales_by_status,
         "top_selling_items_count": top_selling,
         "start_date": start_date,
         "end_date": end_date,

@@ -314,19 +314,19 @@ export default function SuperAdminOverview() {
                 </div>
 
                 <div className="card-elevated p-8">
-                    <h3 className="text-lg font-black uppercase tracking-tight mb-6 text-center capitalize">{timeframe} Kitchen Mix</h3>
+                    <h3 className="text-lg font-black uppercase tracking-tight mb-6 text-center capitalize">{timeframe} Payment Status</h3>
                     <div className="h-[280px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={(dashboardData?.sales_by_kitchen_type || []).map((p: any) => ({ name: (p.product__category__kitchentype__name || 'Other').toLowerCase(), value: parseFloat(p.total_amount) }))}
+                                    data={(dashboardData?.sales_by_status || []).map((p: any) => ({ name: (p.payment_status || 'Other').toLowerCase(), value: parseFloat(p.total_amount) }))}
                                     dataKey="value"
                                     innerRadius={50}
                                     outerRadius={70}
                                     paddingAngle={5}
                                     stroke="none"
                                 >
-                                    {(dashboardData?.sales_by_kitchen_type || []).map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                    {(dashboardData?.sales_by_status || []).map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
                                 <Tooltip formatter={(v: any) => [`Rs.${Number(v).toLocaleString()}`, 'Total']} />
                                 <Legend

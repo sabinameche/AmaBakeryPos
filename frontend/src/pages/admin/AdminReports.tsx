@@ -404,21 +404,22 @@ export default function AdminReports() {
             </div>
 
             {/* Kitchen Type Distribution */}
+            {/* Payment Status Distribution */}
             <div className="card-elevated p-8 relative">
               <div className="mb-6 text-center">
-                <h3 className="text-lg font-black uppercase tracking-tight">Sales by Kitchen Type ({timeframe})</h3>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Kitchen-wise distribution</p>
+                <h3 className="text-lg font-black uppercase tracking-tight">Sales by Payment Status ({timeframe})</h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Status-wise distribution</p>
               </div>
               <div className="h-[300px] w-full relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={(reportData?.sales_by_kitchen_type || []).map((p: any) => ({
+                      data={(reportData?.sales_by_status || []).map((p: any) => ({
                         ...p,
                         total_amount: parseFloat(String(p.total_amount || 0)) || 0
                       }))}
                       dataKey="total_amount"
-                      nameKey="product__category__kitchentype__name"
+                      nameKey="payment_status"
                       cx="50%"
                       cy="50%"
                       innerRadius={80}
@@ -427,8 +428,8 @@ export default function AdminReports() {
                       stroke="none"
                       isAnimationActive={false}
                     >
-                      {(reportData?.sales_by_kitchen_type || []).map((_: any, index: number) => (
-                        <Cell key={`cell-kt-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} className="hover:opacity-80 transition-opacity cursor-pointer" />
+                      {(reportData?.sales_by_status || []).map((_: any, index: number) => (
+                        <Cell key={`cell-status-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} className="hover:opacity-80 transition-opacity cursor-pointer" />
                       ))}
                     </Pie>
                     <Tooltip
@@ -450,14 +451,14 @@ export default function AdminReports() {
                 </div>
               </div>
               <div className="mt-8 space-y-3">
-                {(reportData?.sales_by_kitchen_type || []).map((item: any, index: number) => (
-                  <div key={item.product__category__kitchentype__name} className="flex items-center justify-between px-4 py-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                {(reportData?.sales_by_status || []).map((item: any, index: number) => (
+                  <div key={item.payment_status} className="flex items-center justify-between px-4 py-2 rounded-xl bg-slate-50/50 border border-slate-100">
                     <div className="flex items-center gap-3">
                       <div
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: PAYMENT_COLORS[index % PAYMENT_COLORS.length] }}
                       />
-                      <span className="text-[10px] font-black uppercase text-slate-500">{item.product__category__kitchentype__name || 'other'}</span>
+                      <span className="text-[10px] font-black uppercase text-slate-500">{item.payment_status?.toLowerCase()}</span>
                     </div>
                     <span className="text-xs font-black text-slate-900">
                       Rs.{Number(item.total_amount).toLocaleString()}
