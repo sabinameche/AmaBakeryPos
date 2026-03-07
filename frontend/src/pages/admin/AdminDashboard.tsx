@@ -217,7 +217,7 @@ export default function AdminDashboard() {
           {/* Timeframe Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-11 rounded-xl border-2 font-bold px-4 hover:bg-slate-50 transition-all border-slate-100 shadow-sm gap-2">
+              <Button variant="outline" className="h-11 rounded-xl border-2 font-bold px-4 hover:bg-slate-50 transition-all border-slate-100 shadow-sm gap-2 hover:text-primary">
                 <Filter className="h-4 w-4 text-primary" />
                 <span className="capitalize">{timeframe}</span>
                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -225,12 +225,12 @@ export default function AdminDashboard() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-none shadow-2xl bg-white/95 backdrop-blur-xl">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 py-1.5 font-black">Select Period</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setTimeframe("daily")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-50 py-3">Today</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeframe("weekly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-50 py-3">Weekly</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeframe("monthly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-50 py-3">Monthly</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeframe("yearly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-50 py-3">Yearly</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeframe("daily")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-black-80 py-3">Today</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeframe("weekly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-black-80 py-3">Weekly</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeframe("monthly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-black-80 py-3">Monthly</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeframe("yearly")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-black-80 py-3">Yearly</DropdownMenuItem>
               <DropdownMenuSeparator className="bg-slate-100 my-1" />
-              <DropdownMenuItem onClick={() => setTimeframe("custom")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-50 py-3 text-primary">Custom Range</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeframe("custom")} className="rounded-xl font-bold text-sm cursor-pointer hover:bg-black-80 py-3 text-primary">Custom Range</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

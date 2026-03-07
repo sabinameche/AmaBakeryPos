@@ -382,9 +382,7 @@ function OrderCard({
           <span className="font-bold text-[15px]">
             Order #{order?.invoice_number ? String(order.invoice_number).slice(-4) : "????"}
           </span>
-          <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider text-slate-500">
-            {order?.invoice_type || "Dine-in"}
-          </span>
+          
           {/* Floor badge - always show if floor name exists */}
           {floorName && (
             <span className="text-[10px] bg-success/20 text-success px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -404,7 +402,7 @@ function OrderCard({
               {parsedTableNo ? (
                 <>
                   Table <span className="font-bold text-slate-800">{parsedTableNo}</span>
-                  {floorName && <span className="text-success font-semibold"> • Floor: {floorName}</span>}
+                 
                 </>
               ) : (
                 <span className="font-bold text-slate-800">Takeaway</span>
@@ -486,10 +484,7 @@ function OrderCard({
                 <span>{notification.kitchen_user_name}</span>
                 {(notification.floor_name || order?.floor_name) && (
                   <>
-                    <span className="text-success/50">•</span>
-                    <span className="bg-success/10 px-1.5 py-0.5 rounded-full">
-                      FLOOR: {(notification.floor_name || order?.floor_name).toUpperCase()}
-                    </span>
+                   
                 </>
                 )}
               </span>
@@ -498,10 +493,7 @@ function OrderCard({
                 <span>Active Order</span>
                 {order?.floor_name && (
                   <>
-                    <span className="text-slate-300">•</span>
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded-full">
-                      FLOOR: {order.floor_name.toUpperCase()}
-                    </span>
+                   
                   </>
                 )}
               </span>

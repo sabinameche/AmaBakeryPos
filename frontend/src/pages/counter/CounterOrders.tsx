@@ -427,8 +427,8 @@ export default function CounterOrders() {
                                                             <CheckCircle2 className="h-4 w-4" />
                                                         </Button>
                                                     )}
-                                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
-                                                        <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:text-white">
+                                                        <MoreHorizontal className="h-4 w-4 text-slate-400 hover:text-white" />
                                                     </Button>
                                                 </div>
                                             </td>
