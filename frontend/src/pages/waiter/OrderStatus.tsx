@@ -4,27 +4,40 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { WaiterBottomNav } from "@/components/waiter/WaiterBottomNav";
-import { ChefHat, Bell, Loader2, User, Users } from "lucide-react";
+import { ChefHat, Bell, Loader2, User, Users, Clock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { fetchInvoices } from "@/api/index.js";
+import { fetchInvoices, fetchNotifications, markNotificationRead, fetchProducts, fetchCategories } from "@/api/index.js";
 import { getCurrentUser } from "@/auth/auth";
 import { useOrdersWebSocket } from "@/hooks/useOrdersWebSocket";
+import { formatDistanceToNow } from "date-fns";
 
 type Tab = "mine" | "all";
 
 export default function OrderStatus() {
   const navigate = useNavigate();
   const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("mine");
+  const [statusTab, setStatusTab] = useState<"ready" | "pending" | "completed">("ready");
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const currentUser = getCurrentUser();
 
-  const loadInvoices = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchInvoices();
+      const [data, notifs, prodData, catData] = await Promise.all([
+        fetchInvoices(),
+        fetchNotifications(),
+        fetchProducts(),
+        fetchCategories()
+      ]);
       setAllOrders(data || []);
+      setNotifications((notifs || []).filter((n: any) => !n.is_read));
+      setProducts(prodData || []);
+      setCategories(catData || []);
     } catch (err: any) {
       toast.error(err.message || "Failed to load orders");
     } finally {
@@ -33,8 +46,8 @@ export default function OrderStatus() {
   }, []);
 
   useEffect(() => {
-    loadInvoices();
-  }, [loadInvoices]);
+    loadData();
+  }, [loadData]);
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
@@ -55,12 +68,15 @@ export default function OrderStatus() {
         if (data.type === "invoice_updated" && data.status === "READY") {
           // Order is ready - play notification sound
           playNotificationSound();
-          loadInvoices();
+          toast.success("A kitchen order is ready for pickup!", {
+            icon: <ChefHat className="h-5 w-5 text-success" />
+          });
+          loadData();
         } else if (data.type === "invoice_created" || data.type === "invoice_updated") {
-          loadInvoices();
+          loadData();
         }
       },
-      [loadInvoices, playNotificationSound]
+      [loadData, playNotificationSound]
     )
   );
 
@@ -81,6 +97,17 @@ export default function OrderStatus() {
   const doneOrders = displayOrders.filter(
     (o) => o?.invoice_status === "COMPLETED" || o?.invoice_status === "CANCELLED"
   );
+
+  // Group notifications by floor for better organization
+  const notificationsByFloor = notifications.reduce((acc: any, notif: any) => {
+    const order = allOrders.find(o => String(o.id) === String(notif.invoice));
+    const floorName = notif.floor_name || order?.floor_name || "Unassigned";
+    if (!acc[floorName]) {
+      acc[floorName] = [];
+    }
+    acc[floorName].push(notif);
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -138,67 +165,152 @@ export default function OrderStatus() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Ready Alert Banner */}
-            {readyOrders.length > 0 && (
-              <div className="bg-success/10 border border-success/30 rounded-xl p-3 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-success flex items-center justify-center shrink-0">
-                  <Bell className="h-4 w-4 text-success-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-success text-sm">Orders Ready!</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {readyOrders.length} order(s) ready for pickup
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Status Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar -mx-1 px-1">
+              <button
+                onClick={() => setStatusTab("ready")}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shadow-sm",
+                  statusTab === "ready"
+                    ? "bg-success text-white border-success"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                Ready to Pickup {readyOrders.length > 0 && `(${readyOrders.length})`}
+              </button>
+              <button
+                onClick={() => setStatusTab("pending")}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shadow-sm",
+                  statusTab === "pending"
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                Pending Kitchen {pendingOrders.length > 0 && `(${pendingOrders.length})`}
+              </button>
+              <button
+                onClick={() => setStatusTab("completed")}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shadow-sm",
+                  statusTab === "completed"
+                    ? "bg-slate-800 text-white border-slate-800"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                Completed {doneOrders.length > 0 && `(${doneOrders.length})`}
+              </button>
+            </div>
 
-            {/* Ready Orders */}
-            {readyOrders.length > 0 && (
-              <section>
-                <h2 className="text-xs font-bold mb-2 text-success uppercase tracking-widest flex items-center gap-1.5">
-                  <span className="h-4 w-4 rounded-full bg-success inline-flex items-center justify-center text-white text-[9px] font-black">
-                    {readyOrders.length}
-                  </span>
-                  Ready for Pickup
-                </h2>
-                <div className="space-y-3">
-                  {readyOrders.map((order) => (
-                    <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} />
-                  ))}
-                </div>
-              </section>
+            {/* Ready Section */}
+            {statusTab === "ready" && (
+              <>
+                {/* Ready Orders via Notifications */}
+                {(notifications.length > 0 || readyOrders.filter(o => !notifications.some(n => String(n.invoice) === String(o.id))).length > 0) && (
+                  <div className="space-y-4">
+                    {/* Group notifications by floor */}
+                    {Object.entries(notificationsByFloor).map(([floorName, floorNotifications]: [string, any[]]) => (
+                      <section key={floorName}>
+                        <h2 className="text-xs font-bold mb-2 text-success uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="h-4 w-4 rounded-full bg-success inline-flex items-center justify-center text-white text-[9px] font-black">
+                            {floorNotifications.length}
+                          </span>
+                          Floor {floorName} • Ready for Pickup
+                        </h2>
+                        <div className="space-y-3">
+                          {floorNotifications.map((notif: any) => {
+                            const order = allOrders.find(o => String(o.id) === String(notif.invoice));
+                            if (!order) return null;
+                            return (
+                              <OrderCard
+                                key={`notif-${notif.id}`}
+                                order={order}
+                                notification={notif}
+                                showWaiter={activeTab === "all"}
+                                activeTab={activeTab}
+                                products={products}
+                                categories={categories}
+                                onDismiss={async () => {
+                                  await markNotificationRead(notif.id);
+                                  loadData();
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
+
+                    {/* Fallback for Ready Orders without a specific notification */}
+                    {readyOrders
+                      .filter(o => !notifications.some(n => String(n.invoice) === String(o.id)))
+                      .length > 0 && (
+                      <section>
+                        <h2 className="text-xs font-bold mb-2 text-success/70 uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="h-4 w-4 rounded-full bg-success/70 inline-flex items-center justify-center text-white text-[9px] font-black">
+                            {readyOrders.filter(o => !notifications.some(n => String(n.invoice) === String(o.id))).length}
+                          </span>
+                          Other Ready Orders
+                        </h2>
+                        <div className="space-y-3">
+                          {readyOrders
+                            .filter(o => !notifications.some(n => String(n.invoice) === String(o.id)))
+                            .map((order) => (
+                              <OrderCard key={`order-${order.id}`} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
+                            ))}
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                )}
+
+                {notifications.length === 0 && readyOrders.filter(o => !notifications.some(n => String(n.invoice) === String(o.id))).length === 0 && (
+                  <div className="py-8 text-center text-muted-foreground text-sm">No orders ready for pickup</div>
+                )}
+              </>
             )}
 
             {/* Pending Orders */}
-            {pendingOrders.length > 0 && (
-              <section>
-                <h2 className="text-xs font-bold mb-2 text-muted-foreground uppercase tracking-widest">
-                  Pending Kitchen
-                </h2>
-                <div className="space-y-3">
-                  {pendingOrders.map((order) => (
-                    <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} />
-                  ))}
-                </div>
-              </section>
+            {statusTab === "pending" && (
+              <>
+                {pendingOrders.length > 0 ? (
+                  <section>
+                    <h2 className="text-xs font-bold mb-2 text-muted-foreground uppercase tracking-widest">
+                      Pending Kitchen
+                    </h2>
+                    <div className="space-y-3">
+                      {pendingOrders.map((order) => (
+                        <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
+                      ))}
+                    </div>
+                  </section>
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground text-sm">No pending orders in the kitchen</div>
+                )}
+              </>
             )}
 
             {/* Completed / Paid Orders */}
-            {doneOrders.length > 0 && (
-              <section>
-                <h2 className="text-xs font-bold mb-2 text-muted-foreground uppercase tracking-widest">
-                  Completed
-                </h2>
-                <div className="space-y-3">
-                  {doneOrders.map((order) => (
-                    <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} />
-                  ))}
-                </div>
-              </section>
+            {statusTab === "completed" && (
+              <>
+                {doneOrders.length > 0 ? (
+                  <section>
+                    <h2 className="text-xs font-bold mb-2 text-muted-foreground uppercase tracking-widest">
+                      Completed
+                    </h2>
+                    <div className="space-y-3">
+                      {doneOrders.map((order) => (
+                        <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
+                      ))}
+                    </div>
+                  </section>
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground text-sm">No completed orders to show</div>
+                )}
+              </>
             )}
 
-            {/* Empty State */}
+            {/* Global Empty State overrides if literally 0 orders exist across the board */}
             {!loading && displayOrders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <ChefHat className="h-14 w-14 mb-4 opacity-30" />
@@ -213,6 +325,7 @@ export default function OrderStatus() {
                 )}
               </div>
             )}
+
           </div>
         )}
       </main>
@@ -222,11 +335,34 @@ export default function OrderStatus() {
   );
 }
 
-function OrderCard({ order, showWaiter = false }: { order: any; showWaiter?: boolean }) {
+
+function OrderCard({
+  order,
+  showWaiter = false,
+  notification = null,
+  activeTab,
+  products = [],
+  categories = [],
+  onDismiss
+}: {
+  order: any;
+  showWaiter?: boolean;
+  notification?: any;
+  activeTab?: string;
+  products?: any[];
+  categories?: any[];
+  onDismiss?: () => void;
+}) {
   const isReady = order.invoice_status === "READY";
   const isPaid = order.payment_status === "PAID" || order.invoice_status === "COMPLETED";
+  const [showItems, setShowItems] = useState(false);
 
+  // Fallback for older orders without table_no
+  const tableMatch = (order?.description || order?.invoice_description || "").match(/Table (\d+)/);
+  const parsedTableNo = order?.table_no || (tableMatch ? parseInt(tableMatch[1]) : null);
 
+  // Get floor name from notification or order
+  const floorName = notification?.floor_name || order?.floor_name;
 
   return (
     <div
@@ -247,48 +383,131 @@ function OrderCard({ order, showWaiter = false }: { order: any; showWaiter?: boo
             Order #{order?.invoice_number ? String(order.invoice_number).slice(-4) : "????"}
           </span>
           <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider text-slate-500">
-            {order?.description || order?.invoice_type || "Dine-in"}
+            {order?.invoice_type || "Dine-in"}
           </span>
+          {/* Floor badge - always show if floor name exists */}
+          {floorName && (
+            <span className="text-[10px] bg-success/20 text-success px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+              Floor: {floorName.toUpperCase()}
+            </span>
+          )}
         </div>
         <StatusBadge status={(order?.invoice_status || "PENDING").toLowerCase()} />
       </div>
 
       {/* Body */}
       <div className="px-4 py-2.5">
-        {/* Items */}
-        <div className="space-y-1 mb-2.5">
-          {(order?.items || []).length === 0 && (
-            <p className="text-xs text-muted-foreground italic">No items</p>
-          )}
-          {(order?.items || []).slice(0, 4).map((item: any, idx: number) => {
-            const name = item?.product_name || item?.product?.name || item?.name || `Product #${item?.product || "?"}`;
-            const qty = item?.quantity ?? 1;
-            const price = item?.unit_price ?? item?.price ?? (item?.product?.selling_price) ?? null;
-            return (
-              <div key={idx} className="flex justify-between items-center text-sm">
-                <span className="text-slate-700 font-medium leading-tight">
-                  <span className="text-slate-400 mr-1">{qty}×</span>{name}
-                </span>
-                {price != null && (
-                  <span className="text-slate-500 text-xs tabular-nums">
-                    Rs.{(Number(price) * qty).toFixed(0)}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-          {(order?.items?.length || 0) > 4 && (
-            <p className="text-[10px] text-muted-foreground mt-1">
-              +{(order.items.length) - 4} more items
+        {/* Order Metadata summary */}
+        <div className="flex items-center gap-3 mb-3 pl-1">
+          <div className="flex flex-col">
+            <p className="text-sm font-medium text-slate-600">
+              {parsedTableNo ? (
+                <>
+                  Table <span className="font-bold text-slate-800">{parsedTableNo}</span>
+                  {floorName && <span className="text-success font-semibold"> • Floor: {floorName}</span>}
+                </>
+              ) : (
+                <span className="font-bold text-slate-800">Takeaway</span>
+              )}
             </p>
-          )}
+          </div>
         </div>
+
+        {/* Expandable Items Section */}
+        {showItems ? (
+          <div className="space-y-1 mb-3 pt-2 border-t border-slate-100 transition-all">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-black uppercase text-slate-400">Items</span>
+              <button
+                onClick={() => setShowItems(false)}
+                className="text-[10px] font-bold text-primary hover:underline"
+              >
+                Hide
+              </button>
+            </div>
+
+            {(order?.items || []).length === 0 && (
+              <p className="text-xs text-muted-foreground italic">No items</p>
+            )}
+
+            {/* Show all items if expanded */}
+            {(order?.items || [])
+              .filter((item: any) => {
+                const targetKitchenTypeId = notification?.kitchen_type_id;
+
+                // If not filtered by notification, show everything in "all" or standard cards
+                if (!targetKitchenTypeId) return true;
+
+                // Filter by targetKitchenTypeId exactly matching the kitchen
+                const product = products.find((p: any) => p.id === item.product);
+                if (!product) return true; // Keep it if we can't find product just in case
+
+                const category = categories.find((c: any) => c.id === product.category);
+                if (!category) return true;
+
+                return category.kitchentype === targetKitchenTypeId;
+              })
+              .map((item: any, idx: number) => {
+                const name = item?.product_name || item?.product?.name || item?.name || `Product #${item?.product || "?"}`;
+                const qty = item?.quantity ?? 1;
+                const price = item?.unit_price ?? item?.price ?? (item?.product?.selling_price) ?? null;
+                return (
+                  <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-1 rounded">
+                    <span className="text-slate-700 font-medium leading-tight inline-flex gap-1.5">
+                      <span className="text-primary font-bold bg-primary/10 px-1 rounded">{qty}×</span>{name}
+                    </span>
+                    {price != null && (
+                      <span className="text-slate-500 text-[11px] tabular-nums font-bold">
+                        Rs.{(Number(price) * qty).toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        ) : (
+          <div className="mb-2">
+            <button
+              onClick={() => setShowItems(true)}
+              className="text-[11px] font-bold text-slate-400 flex items-center gap-1 hover:text-primary transition-colors bg-slate-50 px-2 py-0.5 rounded-md"
+            >
+              View {(order?.items || []).length} Items
+            </button>
+          </div>
+        )}
 
         {/* Footer row */}
         <div className="flex items-center justify-between pt-2 border-t border-dashed border-slate-100">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Active Order</span>
-            {showWaiter && order?.created_by_name && (
+            {notification ? (
+              <span className="font-extrabold text-success uppercase tracking-widest text-[10px] flex items-center gap-1">
+                <span>FROM {notification.kitchen_type_name ? notification.kitchen_type_name.toUpperCase() : "KITCHEN"}</span>
+                <span className="text-success/50">•</span>
+                <span>{notification.kitchen_user_name}</span>
+                {(notification.floor_name || order?.floor_name) && (
+                  <>
+                    <span className="text-success/50">•</span>
+                    <span className="bg-success/10 px-1.5 py-0.5 rounded-full">
+                      FLOOR: {(notification.floor_name || order?.floor_name).toUpperCase()}
+                    </span>
+                </>
+                )}
+              </span>
+            ) : (
+              <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px] flex items-center gap-1">
+                <span>Active Order</span>
+                {order?.floor_name && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded-full">
+                      FLOOR: {order.floor_name.toUpperCase()}
+                    </span>
+                  </>
+                )}
+              </span>
+            )}
+
+            {showWaiter && order?.created_by_name && !notification && (
               <>
                 <span className="text-slate-300">•</span>
                 <span className="font-medium text-slate-500">{order.created_by_name}</span>
@@ -302,6 +521,18 @@ function OrderCard({ order, showWaiter = false }: { order: any; showWaiter?: boo
             Rs.{Number(order?.total_amount || 0).toFixed(2)}
           </span>
         </div>
+
+        {/* Action Button */}
+        {notification && onDismiss && (
+          <div className="pt-3 pb-1">
+            <Button
+              onClick={onDismiss}
+              className="w-full bg-success/10 hover:bg-success text-success hover:text-white font-bold h-10 rounded-xl transition-all"
+            >
+              Mark Picked Up
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

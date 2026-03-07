@@ -735,3 +735,20 @@ export async function deleteKitchenType(id) {
   }
   return true;
 }
+
+export async function fetchNotifications() {
+  const res = await apiFetch("/api/notifications/");
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to fetch notifications");
+  return data.data;
+}
+
+export async function markNotificationRead(id) {
+  const res = await apiFetch(`/api/notifications/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_read: true }),
+  });
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data?.message || "Failed to update notification");
+  return data;
+}

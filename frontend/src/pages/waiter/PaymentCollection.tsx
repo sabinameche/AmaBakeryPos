@@ -164,6 +164,58 @@ export default function PaymentCollection() {
 
   };
 
+  const pendingOrdersList = orders.filter(o => !(o.payment_status === 'PAID' || (o.payment_status === 'PARTIAL' && o.received_by_waiter)));
+  const completedOrdersList = orders.filter(o => o.payment_status === 'PAID' || (o.payment_status === 'PARTIAL' && o.received_by_waiter));
+
+  const renderOrderCard = (order: any) => (
+    <button
+      key={order.id}
+      className="card-elevated w-full text-left overflow-hidden transition-all active:scale-[0.98] mb-4"
+      onClick={() => handlePaymentClick(order)}
+    >
+      <div className="bg-slate-50/80 px-4 py-3 flex items-center justify-between border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-base">Order #{order.invoice_number?.slice(-4) || '??'}</span>
+          <span className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-slate-500">
+            Table {order.table_no || order.floor_name || '??'}
+          </span>
+        </div>
+        <StatusBadge
+          status={
+            (order.payment_status === 'PAID' || (order.payment_status === 'PARTIAL' && order.received_by_waiter))
+              ? 'paid'
+              : order.payment_status?.toLowerCase() || 'pending'
+          }
+        />
+      </div>
+
+      <div className="p-4">
+        <div className="space-y-1 mb-3">
+          {order.items?.slice(0, 3).map((item: any, idx: number) => (
+            <div key={idx} className="flex justify-between text-sm text-slate-600">
+              <span>{item.quantity}× {item.product_name || 'Item'}</span>
+              <span className="text-slate-400 tabular-nums">Rs.{Number(item.unit_price * item.quantity).toFixed(0)}</span>
+            </div>
+          ))}
+          {order.items?.length > 3 && (
+            <p className="text-[10px] text-muted-foreground">+ {order.items.length - 3} more items</p>
+          )}
+        </div>
+
+        <div className="flex justify-between items-center pt-3 border-t border-dashed border-slate-100">
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs">
+            <User className="h-3.5 w-3.5" />
+            <span className="font-medium">{order.created_by_name || 'Waiter'}</span>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Amount Due</p>
+            <p className="text-lg font-black text-primary leading-none">Rs.{Number(order.due_amount ?? order.total_amount).toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <MobileHeader title="Payments" showBack={false} />
@@ -193,61 +245,25 @@ export default function PaymentCollection() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                {orders.length} Pending Bills
+                {pendingOrdersList.length} Pending Bills
               </p>
               <Button variant="ghost" size="sm" onClick={loadInvoices} className="h-7 text-[10px] font-bold">
                 REFRESH
               </Button>
             </div>
 
-            {orders.map((order) => (
-              <button
-                key={order.id}
-                className="card-elevated w-full text-left overflow-hidden transition-all active:scale-[0.98]"
-                onClick={() => handlePaymentClick(order)}
-              >
-                <div className="bg-slate-50/80 px-4 py-3 flex items-center justify-between border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-base">Order #{order.invoice_number?.slice(-4) || '??'}</span>
-                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-slate-500">
-                      Table {order.table_no || order.floor_name || '??'}
-                    </span>
-                  </div>
-                  <StatusBadge
-                    status={
-                      (order.payment_status === 'PAID' || (order.payment_status === 'PARTIAL' && order.received_by_waiter))
-                        ? 'paid'
-                        : order.invoice_status?.toLowerCase()
-                    }
-                  />
-                </div>
+            {pendingOrdersList.map(renderOrderCard)}
 
-                <div className="p-4">
-                  <div className="space-y-1 mb-3">
-                    {order.items?.slice(0, 3).map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between text-sm text-slate-600">
-                        <span>{item.quantity}× {item.product_name || 'Item'}</span>
-                        <span className="text-slate-400 tabular-nums">Rs.{Number(item.unit_price * item.quantity).toFixed(0)}</span>
-                      </div>
-                    ))}
-                    {order.items?.length > 3 && (
-                      <p className="text-[10px] text-muted-foreground">+ {order.items.length - 3} more items</p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center pt-3 border-t border-dashed border-slate-100">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-xs">
-                      <User className="h-3.5 w-3.5" />
-                      <span className="font-medium">{order.created_by_name || 'Waiter'}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Amount Due</p>
-                      <p className="text-lg font-black text-primary leading-none">Rs.{Number(order.due_amount ?? order.total_amount).toFixed(2)}</p>
-                    </div>
-                  </div>
+            {completedOrdersList.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                    {completedOrdersList.length} Collected Today
+                  </p>
                 </div>
-              </button>
-            ))}
+                {completedOrdersList.map(renderOrderCard)}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -293,10 +309,10 @@ export default function PaymentCollection() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Cash Payment Dialog */}
-      <Dialog open={showCashDialog} onOpenChange={setShowCashDialog}>
+      < Dialog open={showCashDialog} onOpenChange={setShowCashDialog} >
         <DialogContent className="max-w-[calc(100%-2rem)] w-[380px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-emerald-600 p-6 text-white text-center">
             <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4 border border-white/30">
@@ -383,10 +399,10 @@ export default function PaymentCollection() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Online Payment (QR) Dialog */}
-      <Dialog open={showOnlineDialog} onOpenChange={setShowOnlineDialog}>
+      < Dialog open={showOnlineDialog} onOpenChange={setShowOnlineDialog} >
         <DialogContent className="max-w-[calc(100%-2rem)] w-[380px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-info p-6 text-white text-center">
             <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4 border border-white/30">
@@ -451,10 +467,10 @@ export default function PaymentCollection() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Digital Receipt Modal (Reuse your professional receipt logic here) */}
-      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
+      < Dialog open={showReceipt} onOpenChange={setShowReceipt} >
         <DialogContent className="max-w-[360px] w-[92vw] p-0 border-none bg-transparent shadow-none overflow-visible max-h-[92vh] flex flex-col items-center">
           <div className="h-[2px] w-24 bg-white/20 rounded-full mb-4 shrink-0" />
 
@@ -503,10 +519,10 @@ export default function PaymentCollection() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       <WaiterBottomNav />
-    </div>
+    </div >
   );
 }
 

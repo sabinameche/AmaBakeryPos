@@ -20,6 +20,7 @@ from .views_dir.dashboard_view import DashboardViewClass, ReportDashboardViewCla
 from .views_dir.staff_view import StaffReportViewClass
 from .views_dir.payment_view import PaymentClassView
 from .views_dir.kitchentype_view import KitchenViewClass
+from .views_dir.notification_view import NotificationViewClass
 
 # custom
 from .views_dir.product_view import ProductViewClass

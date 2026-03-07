@@ -85,15 +85,24 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="text-right flex flex-col">
-            <div className="flex items-center justify-end">
-              <span className="text-sm font-black text-slate-700">Tb {order.tableNumber}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase ml-2">{order.groupName || 'A'}</span>
-            </div>
-            {order.floorName && (
-              <span className="text-[8px] font-black text-primary uppercase px-1.5 py-0.5 bg-primary/5 rounded border border-primary/10 mt-0.5 self-end">
-                {order.floorName}
-              </span>
+          <div className="text-right flex flex-col items-end gap-1.5">
+            {order.tableNumber ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TABLE</span>
+                <span className="text-xs font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 min-w-[30px] text-center shadow-sm">
+                  {order.tableNumber}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shadow-sm">TAKEAWAY</span>
+            )}
+            {order.tableNumber && order.floorName && (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FLOOR</span>
+                <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 min-w-[30px] text-center shadow-sm">
+                  {order.floorName}
+                </span>
+              </div>
             )}
           </div>
         </div>

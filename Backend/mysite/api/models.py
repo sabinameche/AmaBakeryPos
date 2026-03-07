@@ -140,7 +140,6 @@ class Invoice(models.Model):
     PAYMENT_STATUS_CHOICES = [
         ("PENDING", "Pending"),
         ("UNPAID", "Unpaid"),
-        ("WAITER PAID","Waiter Paid"),
         ("PARTIAL", "Partially Paid"),
         ("PAID", "Fully Paid"),
         ("CANCELLED", "Cancelled"),
@@ -324,3 +323,15 @@ class ItemActivity(models.Model):
     ]
     types = models.CharField(max_length=50, choices=TYPE_CHOICES)
     remarks = models.TextField(blank=True)
+
+
+class Notification(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='notifications')
+    kitchen_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kitchen_notifications')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

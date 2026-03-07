@@ -41,6 +41,8 @@ urlpatterns = [
         views.ItemActivityView.as_view(),
         name="activity_detail",
     ),
+    path("notifications/", views.NotificationViewClass.as_view(), name="notifications"),
+    path("notifications/<int:id>/", views.NotificationViewClass.as_view(), name="notification_detail"),
     path("change-password/", views.change_own_password, name="change-password"),
     path(
         "admin-reset-password/<int:user_id>/",

@@ -23,7 +23,6 @@ export default function OrderEntry() {
   const navigate = useNavigate();
   const { tableNumber } = useParams();
   const [searchParams] = useSearchParams();
-  const groupName = searchParams.get('group');
 
   const [products, setProducts] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -74,9 +73,9 @@ export default function OrderEntry() {
   // Save cart to storage whenever it changes
   useEffect(() => {
     if (tableNumber && cart.length > 0) {
-      saveTableOrder(tableNumber, groupName || undefined, cart);
+      saveTableOrder(tableNumber, cart);
     }
-  }, [cart, tableNumber, groupName]);
+  }, [cart, tableNumber]);
 
   const filteredItems = useMemo(() => {
     let items = products;
@@ -174,7 +173,6 @@ export default function OrderEntry() {
       state: {
         cart,
         tableNumber,
-        groupName,
         floorId: searchParams.get('floorId'),
       }
     });
@@ -183,7 +181,7 @@ export default function OrderEntry() {
   return (
     <div className="min-h-screen bg-background pb-24 text-left">
       <MobileHeader
-        title={`Table ${tableNumber}${groupName ? ` • ${groupName}` : ''}`}
+        title={`Table ${tableNumber}`}
         showBack
       />
 

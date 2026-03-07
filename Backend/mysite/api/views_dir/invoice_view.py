@@ -161,7 +161,7 @@ class InvoiceViewClass(APIView):
         # Don't allow modifying paid/cancelled invoices
 
         print("i", invoice.payment_status)
-        if invoice.payment_status in ["PAID", "CANCELLED"]:
+        if invoice.payment_status in ["CANCELLED"]:
             print("i am inside patch method!")
             return Response(
                 {
@@ -185,6 +185,15 @@ class InvoiceViewClass(APIView):
             # Broadcast status update to all connected clients (kitchen, waiter, counter)
             new_status = data.get("invoice_status")
             if new_status:
+                if new_status == "READY":
+                    from ..models import Notification
+                    Notification.objects.create(
+                        invoice=invoice,
+                        kitchen_user=request.user,
+                        branch=invoice.branch,
+                        message=f"Order #{invoice.invoice_number or id} is ready! Prepared by {request.user.full_name or request.user.username}."
+                    )
+
                 try:
                     channel_layer = get_channel_layer()
                     if channel_layer is not None:

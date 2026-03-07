@@ -6,24 +6,12 @@ from rest_framework.views import APIView
 from datetime import date
 
 from ..models import Invoice, User
+from .dashboard_view import get_date_range
 
 
 class StaffReportViewClass(APIView):
     """
-    Returns staff performance data for a branch.
-
-    Endpoints:
-      GET /api/calculate/staff-report/<branch_id>/   → ADMIN / SUPER_ADMIN
-      GET /api/calculate/staff-report/               → BRANCH_MANAGER (uses own branch)
-
-    Response fields per staff member:
-      - id            : user id
-      - name          : full_name (falls back to username)
-      - role          : user_type (WAITER / COUNTER / etc.)
-      - total_orders  : number of invoices served / created by this staff
-      - total_sales   : sum of total_amount on those invoices
-      - current_month_orders : orders in current calendar month
-      - current_month_sales  : sales in current calendar month
+    Returns staff performance data for a branch based on timeframe filter.
     """
 
     def get_user_role(self, user):
@@ -32,8 +20,6 @@ class StaffReportViewClass(APIView):
     def get(self, request, branch_id=None):
         role = self.get_user_role(request.user)
         my_branch = getattr(request.user, "branch", None)
-        today = date.today()
-        print("aaja ko din/?",today)
 
         if role not in ["SUPER_ADMIN", "ADMIN", "BRANCH_MANAGER"]:
             return Response(
@@ -58,8 +44,7 @@ class StaffReportViewClass(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        current_month = timezone.localdate().month
-        current_year = timezone.localdate().year
+        start_date, end_date, timeframe = get_date_range(request)
 
         # Fetch staff belonging to this branch (exclude super_admin, pure admins)
         staff_qs = User.objects.filter(
@@ -70,9 +55,13 @@ class StaffReportViewClass(APIView):
         staff_data = []
 
         for staff in staff_qs:
-            # Invoices where this staff member was the waiter OR counter OR creator
+            # Invoices where this staff member was involved, filtered by date
             invoices_all = (
-                Invoice.objects.filter(branch=my_branch)
+                Invoice.objects.filter(
+                    branch=my_branch,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                )
                 .filter(
                     Q(received_by_waiter=staff)
                     | Q(received_by_counter=staff)
@@ -83,39 +72,28 @@ class StaffReportViewClass(APIView):
 
             total_orders = invoices_all.count()
             total_sales = (
-                invoices_all.filter(created_at__date = today).aggregate(total=Sum("total_amount"))["total"] or 0
+                invoices_all.aggregate(total=Sum("total_amount"))["total"] or 0
             )
+            # Cash in hand represents waiter cash collections (partial payment status means waiter hasn't handed over yet)
             total_cash_in_hand = invoices_all.filter(
-                            received_by_waiter__user_type = "WAITER",
-                            payment_status = "PARTIAL").values('received_by_waiter__id').aggregate(total_cash_in_hand = Sum('total_amount'))['total_cash_in_hand'] or 0
+                received_by_waiter__user_type="WAITER",
+                payment_status="PARTIAL"
+            ).aggregate(total_cash=Sum("total_amount"))["total_cash"] or 0
 
-            # Current month breakdown
-            invoices_month = invoices_all.filter(
-                created_at__year=current_year,
-                created_at__month=current_month,
-            )
-            current_month_orders = invoices_month.count()
-            current_month_sales = (
-                invoices_month.aggregate(total=Sum("total_amount"))["total"] or 0
-            )
-            
             staff_data.append(
                 {
                     "id": staff.id,
                     "name": staff.full_name or staff.username,
                     "username": staff.username,
                     "role": staff.user_type,
-                    "total_orders": total_orders,
-                    "total_sales": float(total_sales),
-                    "total_cash_in_hand": float(total_cash_in_hand),
-                    "current_month_orders": current_month_orders,
-                    "current_month_sales": float(current_month_sales),
+                    "orders": total_orders,
+                    "sales": float(total_sales),
+                    "cash_in_hand": float(total_cash_in_hand),
                 }
             )
-     
 
-        # Sort by total_orders descending
-        staff_data.sort(key=lambda x: x["total_orders"], reverse=True)
+        # Sort by orders descending
+        staff_data.sort(key=lambda x: x["orders"], reverse=True)
 
         return Response(
             {

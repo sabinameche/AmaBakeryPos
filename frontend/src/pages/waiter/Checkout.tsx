@@ -219,7 +219,8 @@ export default function Checkout() {
                 customer: customer?.id || null,
                 invoice_type: "SALE",
                 notes: specialInstructions,
-                description: `Table ${state?.tableNumber} - ${state?.groupName || "Walk-in"}`,
+                description: `Table ${state?.tableNumber}`,
+                table_no: state?.tableNumber ? parseInt(state.tableNumber) : null,
                 floor: state?.floorId ? parseInt(state.floorId) : null,
                 tax_amount: taxAmount,
                 discount: discountAmount,
@@ -238,7 +239,7 @@ export default function Checkout() {
             setOrderId(String(result.id)); // Ensure ID is a string
 
             // Clear the order from storage
-            clearTableOrder(state?.tableNumber || "", state?.groupName);
+            clearTableOrder(state?.tableNumber || "");
 
             return result;
         } catch (err: any) {
@@ -302,7 +303,7 @@ export default function Checkout() {
         try {
             await submitInvoice(true, Math.min(total, receivedAmount), "CASH");
             const change = 0;
-            if(receivedAmount>total){
+            if (receivedAmount > total) {
                 const change = receivedAmount - total;
             }
 
@@ -633,7 +634,7 @@ export default function Checkout() {
                         <div>
                             <h2 className="text-xl font-bold tracking-tight text-primary">Ama Bakery</h2>
                             <p className="text-sm text-muted-foreground font-medium">
-                                Table {state.tableNumber}{state.groupName ? ` • ${state.groupName}` : ''}
+                                Table {state.tableNumber}
                             </p>
                         </div>
                     </div>

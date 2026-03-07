@@ -140,16 +140,13 @@ export default function KitchenDisplay() {
       const mappedInvoices = (invoiceData || [])
         .filter((inv: any) => inv && inv.is_active && (inv.invoice_status === 'PENDING' || inv.invoice_status === 'READY' || inv.invoice_status === 'COMPLETED'))
         .map((inv: any) => {
-          // Extract table and group from description "Table 1 - Group A"
           const tableMatch = (inv.description || inv.invoice_description || "").match(/Table (\d+)/);
-          const tableNumber = tableMatch ? parseInt(tableMatch[1]) : 0;
-          const groupName = (inv.description || inv.invoice_description || "").split(" - ")[1] || "Sale";
+          const tableNumber = inv.table_no || (tableMatch ? parseInt(tableMatch[1]) : 0);
 
           return {
             id: (inv.id || "").toString(),
             invoiceNumber: inv.invoice_number || "N/A",
             tableNumber,
-            groupName,
             waiter: inv.created_by_name || "Unknown",
             floor: inv.floor,
             floorName: inv.floor_name,
