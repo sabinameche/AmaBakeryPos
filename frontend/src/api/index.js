@@ -552,10 +552,10 @@ export async function fetchInvoices() {
   return data.data;
 }
 
-export async function updateInvoiceStatus(id, status) {
+export async function updateInvoiceStatus(id, status, extraData = {}) {
   const res = await apiFetch(`/api/invoice/${id}/`, {
     method: "PATCH",
-    body: JSON.stringify({ invoice_status: status }),
+    body: JSON.stringify({ invoice_status: status, ...extraData }),
   });
   const data = await safeJson(res);
   if (!res.ok) throw new Error(data?.message || "Failed to update invoice status");
@@ -743,10 +743,15 @@ export async function fetchNotifications() {
   return data.data;
 }
 
-export async function markNotificationRead(id) {
+export async function markNotificationRead(id, markAsReceived = false) {
+  const payload = { is_read: true };
+  if (markAsReceived) {
+    payload.mark_as_received = true;
+  }
+
   const res = await apiFetch(`/api/notifications/${id}/`, {
     method: "PATCH",
-    body: JSON.stringify({ is_read: true }),
+    body: JSON.stringify(payload),
   });
   const data = await safeJson(res);
   if (!res.ok) throw new Error(data?.message || "Failed to update notification");

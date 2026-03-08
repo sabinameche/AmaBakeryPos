@@ -7,7 +7,7 @@ import { WaiterBottomNav } from "@/components/waiter/WaiterBottomNav";
 import { ChefHat, Bell, Loader2, User, Users, Clock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { fetchInvoices, fetchNotifications, markNotificationRead, fetchProducts, fetchCategories } from "@/api/index.js";
+import { fetchInvoices, fetchNotifications, markNotificationRead, fetchProducts, fetchCategories, updateInvoiceStatus } from "@/api/index.js";
 import { getCurrentUser } from "@/auth/auth";
 import { useOrdersWebSocket } from "@/hooks/useOrdersWebSocket";
 import { formatDistanceToNow } from "date-fns";
@@ -250,10 +250,19 @@ export default function OrderStatus() {
                                 products={products}
                                 categories={categories}
                                 onDismiss={async () => {
-                                  // Mark ALL notifications for this order as read
-                                  const orderNotifs = notifications.filter(n => String(n.invoice) === String(order.id));
-                                  await Promise.all(orderNotifs.map(n => markNotificationRead(n.id)));
-                                  loadData();
+                                  try {
+                                    // 1. Mark the invoice as COMPLETED (this auto-sets received_by_waiter on the backend)
+                                    await updateInvoiceStatus(order.id, "COMPLETED");
+
+                                    // 2. Mark ALL notifications for this order as read/received
+                                    const orderNotifs = notifications.filter(n => String(n.invoice) === String(order.id));
+                                    await Promise.all(orderNotifs.map(n => markNotificationRead(n.id, true)));
+
+                                    toast.success("Order marked as picked up!");
+                                    loadData();
+                                  } catch (err: any) {
+                                    toast.error(err.message || "Failed to mark as picked up");
+                                  }
                                 }}
                               />
                             );
@@ -277,7 +286,23 @@ export default function OrderStatus() {
                             {readyOrders
                               .filter(o => !filteredDeduplicatedNotifications.some(n => String(n.invoice) === String(o.id)))
                               .map((order) => (
-                                <OrderCard key={`order-${order.id}`} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
+                                <OrderCard
+                                  key={`order-${order.id}`}
+                                  order={order}
+                                  showWaiter={activeTab === "all"}
+                                  activeTab={activeTab}
+                                  products={products}
+                                  categories={categories}
+                                  onDismiss={async () => {
+                                    try {
+                                      await updateInvoiceStatus(order.id, "COMPLETED");
+                                      toast.success("Order marked as picked up!");
+                                      loadData();
+                                    } catch (err: any) {
+                                      toast.error(err.message || "Failed to mark as picked up");
+                                    }
+                                  }}
+                                />
                               ))}
                           </div>
                         </section>
@@ -321,7 +346,23 @@ export default function OrderStatus() {
                     </h2>
                     <div className="space-y-3">
                       {doneOrders.map((order) => (
-                        <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          showWaiter={activeTab === "all"}
+                          activeTab={activeTab}
+                          products={products}
+                          categories={categories}
+                          onUndo={async () => {
+                            try {
+                              await updateInvoiceStatus(order.id, "READY", { received_by_waiter: null });
+                              toast.success("Pick up undone!");
+                              loadData();
+                            } catch (err: any) {
+                              toast.error(err.message || "Failed to undo pick up");
+                            }
+                          }}
+                        />
                       ))}
                     </div>
                   </section>
@@ -364,7 +405,8 @@ function OrderCard({
   activeTab,
   products = [],
   categories = [],
-  onDismiss
+  onDismiss,
+  onUndo,
 }: {
   order: any;
   showWaiter?: boolean;
@@ -373,10 +415,16 @@ function OrderCard({
   products?: any[];
   categories?: any[];
   onDismiss?: () => void;
+  onUndo?: () => void;
 }) {
+  const currentUser = getCurrentUser();
   const isReady = order.invoice_status === "READY";
-  const isPaid = order.payment_status === "PAID" || order.invoice_status === "COMPLETED";
+  const isCompleted = order.invoice_status === "COMPLETED";
+  const isPaid = order.payment_status === "PAID" || isCompleted;
   const [showItems, setShowItems] = useState(false);
+
+  // Check if current user is the one who picked it up
+  const isMyPickUp = String(order.received_by_waiter) === String(currentUser?.id);
 
   // Fallback for older orders without table_no
   const tableMatch = (order?.description || order?.invoice_description || "").match(/Table (\d+)/);
@@ -512,9 +560,10 @@ function OrderCard({
             ) : (
               <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px] flex items-center gap-1">
                 <span>Active Order</span>
-                {order?.floor_name && (
+                {order?.received_by_waiter_name && (
                   <>
-
+                    <span className="text-slate-300">•</span>
+                    <span className="text-success font-black">PICKED BY {order.received_by_waiter_name.toUpperCase()}</span>
                   </>
                 )}
               </span>
@@ -536,13 +585,25 @@ function OrderCard({
         </div>
 
         {/* Action Button */}
-        {notification && onDismiss && (
+        {isReady && onDismiss && (
           <div className="pt-3 pb-1">
             <Button
               onClick={onDismiss}
               className="w-full bg-success/10 hover:bg-success text-success hover:text-white font-bold h-10 rounded-xl transition-all"
             >
               Mark Picked Up
+            </Button>
+          </div>
+        )}
+
+        {isCompleted && onUndo && isMyPickUp && (
+          <div className="pt-3 pb-1">
+            <Button
+              onClick={onUndo}
+              variant="outline"
+              className="w-full border-red-200 text-red-500 hover:bg-red-50 font-bold h-10 rounded-xl transition-all"
+            >
+              Undo Pick Up
             </Button>
           </div>
         )}

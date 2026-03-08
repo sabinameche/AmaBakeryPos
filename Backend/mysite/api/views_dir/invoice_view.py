@@ -172,11 +172,26 @@ class InvoiceViewClass(APIView):
             )
 
         # Only allow updating safe fields
-        allowed_fields = ["notes", "description", "is_active", "invoice_status"]
+        allowed_fields = ["notes", "description", "is_active", "invoice_status", "received_by_waiter"]
         if role in ["ADMIN", "SUPER_ADMIN"]:
             allowed_fields.extend(["tax_amount", "discount"])
 
         data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+        # Auto-set received_by_waiter if waiter is marking as COMPLETED
+        if role == "WAITER" and data.get("invoice_status") == "COMPLETED":
+            data["received_by_waiter"] = request.user.id
+        
+        # Allow clearing received_by_waiter if waiter is reverting to READY
+        # Only allow the waiter who picked it up (or an admin) to revert it
+        if "received_by_waiter" in request.data and request.data.get("received_by_waiter") is None:
+            if role != "ADMIN" and not request.user.is_superuser:
+                if invoice.received_by_waiter != request.user:
+                    return Response(
+                        {"success": False, "message": "Only the waiter who picked up the order can revert it."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            data["received_by_waiter"] = None
 
         serializer = InvoiceResponseSerializer(invoice, data=data, partial=True)
         if serializer.is_valid():
