@@ -332,6 +332,7 @@ class Notification(models.Model):
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    received_by = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
 
     class Meta:
         ordering = ["-created_at"]

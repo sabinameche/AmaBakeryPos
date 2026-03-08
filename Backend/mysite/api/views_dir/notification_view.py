@@ -39,12 +39,45 @@ class NotificationViewClass(APIView):
         return Response({"success": True, "data": serializer.data})
 
     def patch(self, request, id=None):
-        """Mark notification as read"""
+        """Mark notification as received/read"""
         try:
             notification = Notification.objects.get(id=id)
-            if request.data.get("is_read") is not None:
-                notification.is_read = request.data.get("is_read")
+            
+            # Case 1: Waiter is marking as received (ticking the notification)
+            if request.data.get("mark_as_received") or request.data.get("is_read") is True:
+                notification.is_read = True
+                notification.received_by = request.user  # Set the current user as receiver
                 notification.save()
-            return Response({"success": True, "message": "Updated successfully"})
+                
+                # Return the updated notification using your serializer
+                serializer = NotificationSerializer(notification, context={'request': request})
+                return Response({
+                    "success": True, 
+                    "message": "Notification marked as received",
+                    "data": serializer.data
+                })
+            
+            # Case 2: Only updating is_read (if you need this separately)
+            elif request.data.get("is_read") is not None:
+                notification.is_read = request.data.get("is_read")
+                # Don't automatically set received_by when just toggling is_read
+                notification.save()
+                
+                serializer = NotificationSerializer(notification, context={'request': request})
+                return Response({
+                    "success": True, 
+                    "message": "Updated successfully",
+                    "data": serializer.data
+                })
+            
+            else:
+                return Response({
+                    "success": False, 
+                    "message": "No valid update field provided"
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
         except Notification.DoesNotExist:
-            return Response({"success": False, "message": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                "success": False, 
+                "message": "Notification not found"
+            }, status=status.HTTP_404_NOT_FOUND)
