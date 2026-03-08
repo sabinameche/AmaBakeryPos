@@ -3,9 +3,6 @@ db.sqlite3
 node_modules/
 reset.sh
 start.sh
-<<<<<<< new-branch
-__pycache__/
-=======
 
 # Python bytecode
 __pycache__/
@@ -18,5 +15,4 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-
->>>>>>> main
+.env
