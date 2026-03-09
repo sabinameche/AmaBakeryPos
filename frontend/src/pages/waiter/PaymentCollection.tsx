@@ -27,6 +27,7 @@ export default function PaymentCollection() {
   const [showOnlineDialog, setShowOnlineDialog] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any | null>(null);
   const [completedChange, setCompletedChange] = useState<number>(0);
+  const [showAlreadyPaidDialog, setShowAlreadyPaidDialog] = useState(false);
 
   const loadInvoices = useCallback(async () => {
     setLoading(true);
@@ -78,7 +79,12 @@ export default function PaymentCollection() {
 
   const handlePaymentClick = (order: any) => {
     setSelectedOrder(order);
-    setShowPaymentDialog(true);
+    const isPaid = order.payment_status === 'PAID' || (order.payment_status === 'PARTIAL' && order.received_by_waiter);
+    if (isPaid) {
+      setShowAlreadyPaidDialog(true);
+    } else {
+      setShowPaymentDialog(true);
+    }
   };
 
   const handlePaymentMethod = (method: 'CASH' | 'CARD' | 'ONLINE' | 'QR') => {
@@ -310,6 +316,41 @@ export default function PaymentCollection() {
           </div>
         </DialogContent>
       </Dialog >
+
+      {/* Already Paid Dialog */}
+      <Dialog open={showAlreadyPaidDialog} onOpenChange={setShowAlreadyPaidDialog}>
+        <DialogContent className="max-w-[calc(100%-2rem)] w-[360px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-success p-6 text-white text-center">
+            <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border border-white/20">
+              <CheckCircle2 className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-bold">Payment Collected</h3>
+            <p className="text-white/70 text-sm">Order #{selectedOrder?.invoice_number?.slice(-4)}</p>
+          </div>
+
+          <div className="p-6 space-y-6 text-center">
+            <div className="space-y-2">
+              <p className="text-slate-600 font-medium">This order has already been paid or collected.</p>
+              <div className="text-center py-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Total Amount</p>
+                <p className="text-3xl font-black text-slate-900">Rs.{Number(selectedOrder?.total_amount || 0).toFixed(2)}</p>
+                {selectedOrder?.received_by_waiter_name && (
+                  <p className="text-[10px] font-bold text-success mt-2 uppercase tracking-wider">
+                    Collected By: {selectedOrder.received_by_waiter_name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <Button
+              className="w-full h-12 bg-slate-900 text-white font-bold rounded-xl"
+              onClick={() => setShowAlreadyPaidDialog(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Cash Payment Dialog */}
       < Dialog open={showCashDialog} onOpenChange={setShowCashDialog} >

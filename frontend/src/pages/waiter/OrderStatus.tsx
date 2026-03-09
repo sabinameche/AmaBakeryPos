@@ -20,7 +20,7 @@ export default function OrderStatus() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("mine");
-  const [statusTab, setStatusTab] = useState<"ready" | "pending" | "completed">("ready");
+  const [statusTab, setStatusTab] = useState<"ready" | "completed">("ready");
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const currentUser = getCurrentUser();
@@ -90,9 +90,6 @@ export default function OrderStatus() {
 
   const readyOrders = displayOrders.filter(
     (o) => o?.invoice_status === "READY"
-  );
-  const pendingOrders = displayOrders.filter(
-    (o) => o?.invoice_status === "PENDING"
   );
   const doneOrders = displayOrders.filter(
     (o) => o?.invoice_status === "COMPLETED" || o?.invoice_status === "CANCELLED"
@@ -196,17 +193,6 @@ export default function OrderStatus() {
                 )}
               >
                 Ready to Pickup {readyOrders.length > 0 && `(${readyOrders.length})`}
-              </button>
-              <button
-                onClick={() => setStatusTab("pending")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shadow-sm",
-                  statusTab === "pending"
-                    ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-                )}
-              >
-                Pending Kitchen {pendingOrders.length > 0 && `(${pendingOrders.length})`}
               </button>
               <button
                 onClick={() => setStatusTab("completed")}
@@ -316,25 +302,6 @@ export default function OrderStatus() {
               </>
             )}
 
-            {/* Pending Orders */}
-            {statusTab === "pending" && (
-              <>
-                {pendingOrders.length > 0 ? (
-                  <section>
-                    <h2 className="text-xs font-bold mb-2 text-muted-foreground uppercase tracking-widest">
-                      Pending Kitchen
-                    </h2>
-                    <div className="space-y-3">
-                      {pendingOrders.map((order) => (
-                        <OrderCard key={order.id} order={order} showWaiter={activeTab === "all"} activeTab={activeTab} products={products} categories={categories} />
-                      ))}
-                    </div>
-                  </section>
-                ) : (
-                  <div className="py-8 text-center text-muted-foreground text-sm">No pending orders in the kitchen</div>
-                )}
-              </>
-            )}
 
             {/* Completed / Paid Orders */}
             {statusTab === "completed" && (
