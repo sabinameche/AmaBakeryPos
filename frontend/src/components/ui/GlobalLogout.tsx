@@ -23,15 +23,23 @@ export function GlobalLogout() {
     const isLoginPage = location.pathname === "/login" || location.pathname === "/super-admin";
 
 
-    // Handle unauthorized event from api/index.js
+    // Handle unauthorized event from api/index.js and manual logout triggers
     useEffect(() => {
         const handleUnauthorized = () => {
             console.warn("Session expired or unauthorized. Logging out...");
             logout();
         };
 
+        const handleShowConfirm = () => {
+            setShowConfirm(true);
+        };
+
         window.addEventListener("unauthorized", handleUnauthorized);
-        return () => window.removeEventListener("unauthorized", handleUnauthorized);
+        window.addEventListener("show-logout-confirm", handleShowConfirm);
+        return () => {
+            window.removeEventListener("unauthorized", handleUnauthorized);
+            window.removeEventListener("show-logout-confirm", handleShowConfirm);
+        };
     }, []);
 
     if (!isLoggedIn() || isLoginPage) return null;

@@ -345,7 +345,7 @@ export default function SuperAdminAnalytics() {
                 {/* Items Ranking Table */}
                 <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden bg-white">
                     <CardHeader className="px-8 pt-8">
-                        <CardTitle className="text-xl font-black text-slate-900">Best Sellers</CardTitle>
+                        <CardTitle className="text-xl font-black text-slate-900">Top Selling Products</CardTitle>
                         <CardDescription className="font-medium">High volume inventory nodes.</CardDescription>
                     </CardHeader>
                     <CardContent className="px-4 pb-8">

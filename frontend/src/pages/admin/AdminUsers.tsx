@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, User, Shield, ChefHat, UtensilsCrossed, Loader2, CookingPot, Check } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, User, Shield, ChefHat, UtensilsCrossed, Loader2, CookingPot, Check, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { fetchUsers, createUser, updateUser, deleteUser, fetchKitchenTypes, createKitchenType } from "../../api/index.js";
 import { ResetPasswordModal } from "../../components/auth/ResetPasswordModal";
@@ -61,6 +61,7 @@ export default function AdminUsers() {
   const [kitchenSearchValue, setKitchenSearchValue] = useState("");
   const [isKitchenDropdownOpen, setIsKitchenDropdownOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState("WAITER");
+  const [showPassword, setShowPassword] = useState(false);
 
   const currentUser = getCurrentUser();
   const branchId = currentUser?.branch_id ?? null;
@@ -319,13 +320,23 @@ export default function AdminUsers() {
               {!editUser && (
                 <div>
                   <Label htmlFor="password">Password (Default: amabakery@123)</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    defaultValue="amabakery@123"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      defaultValue="amabakery@123"
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
               <div className="flex gap-2 pt-4">

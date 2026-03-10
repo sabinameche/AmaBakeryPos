@@ -139,6 +139,21 @@ export default function SuperAdminOverview() {
                 ...prev,
                 ...data,
             }));
+
+            // Update branch revenue in real-time if performance data is present
+            if (data.top_perfomance_branch) {
+                setBranches((prevBranches) =>
+                    prevBranches.map((branch) => {
+                        const performance = data.top_perfomance_branch.find(
+                            (p: any) => p.id === branch.id
+                        );
+                        return performance
+                            ? { ...branch, revenue: performance.total_sales_per_branch }
+                            : branch;
+                    })
+                );
+            }
+
             setSSEConnected(true);
         }
     }, []);
@@ -172,7 +187,19 @@ export default function SuperAdminOverview() {
                 fetchBranches(),
                 fetchDashboardDetails(null, filters)
             ]);
-            setBranches(branchRes.data || []);
+
+            const branchList = branchRes.data || [];
+            const performanceData = dashboardRes.top_perfomance_branch || [];
+
+            // Sync branch revenue with timeframe-aware data from dashboard summary
+            const syncedBranches = branchList.map((branch: Branch) => {
+                const performance = performanceData.find((p: any) => p.id === branch.id);
+                return performance
+                    ? { ...branch, revenue: performance.total_sales_per_branch }
+                    : branch;
+            });
+
+            setBranches(syncedBranches);
             setDashboardData(dashboardRes);
         } catch (err: any) {
             toast.error(err.message || "Failed to load dashboard data");

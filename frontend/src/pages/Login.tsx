@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Lock, ArrowRight } from "lucide-react";
+import { User, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const redirectByRole = (role?: string) => {
     switch (role) {
@@ -161,13 +162,24 @@ export default function Login() {
                 <div className="relative">
                   <Lock className="absolute left-4 lg:left-5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 lg:h-6 lg:w-6 group-focus-within:text-primary transition-colors" />
                   <Input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-12 lg:pl-16 h-12 lg:h-16 text-base lg:text-lg bg-slate-50 border-slate-100 focus:border-primary focus:bg-white transition-all rounded-xl lg:rounded-2xl"
+                    className="pl-12 lg:pl-16 pr-12 lg:pr-16 h-12 lg:h-16 text-base lg:text-lg bg-slate-50 border-slate-100 focus:border-primary focus:bg-white transition-all rounded-xl lg:rounded-2xl"
                     placeholder="••••••••"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <Eye className="h-5 w-5 lg:h-6 lg:w-6" />
+                    ) : (
+                      <EyeOff className="h-5 w-5 lg:h-6 lg:w-6" />
+                    )}
+                  </button>
                 </div>
               </div>
 

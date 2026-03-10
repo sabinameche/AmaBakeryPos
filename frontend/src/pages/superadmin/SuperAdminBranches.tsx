@@ -11,6 +11,16 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { fetchBranches, createBranch, deleteBranch, createUser, updateBranch, createTable, fetchTables } from "../../api/index.js";
@@ -40,6 +50,8 @@ export default function SuperAdminBranches() {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [branchToDelete, setBranchToDelete] = useState<Branch | null>(null);
 
     const [form, setForm] = useState({
         name: "",
@@ -144,12 +156,14 @@ export default function SuperAdminBranches() {
         }
     };
 
-    const handleDelete = async (id: number, name: string) => {
-        if (!confirm(`Are you sure you want to delete branch "${name}"?`)) return;
+    const handleDelete = async () => {
+        if (!branchToDelete) return;
 
         try {
-            const response = await deleteBranch(id);
+            const response = await deleteBranch(branchToDelete.id);
             toast.success(response.message || "Branch deleted");
+            setIsDeleteOpen(false);
+            setBranchToDelete(null);
             loadBranches();
         } catch (err: any) {
             toast.error(err.message || "Failed to delete branch");
@@ -253,7 +267,8 @@ export default function SuperAdminBranches() {
                                         className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleDelete(branch.id, branch.name);
+                                            setBranchToDelete(branch);
+                                            setIsDeleteOpen(true);
                                         }}
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -468,7 +483,7 @@ export default function SuperAdminBranches() {
                                                 />
                                             </div>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight text-center">
+                                        <p className="text-[10px] text-slate-400 font-bold tracking-tight text-center">
                                             Default Password: <span className="text-primary">amabakery@123</span>
                                         </p>
                                     </div>
@@ -544,6 +559,32 @@ export default function SuperAdminBranches() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent className="rounded-[2rem] border-2 border-slate-50 shadow-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-2xl font-black text-slate-900">Delete Branch?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 font-medium">
+                            Are you sure you want to delete <span className="text-primary font-bold">"{branchToDelete?.name}"</span>?
+                            This action cannot be undone and will remove all associated data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2 sm:gap-0">
+                        <AlertDialogCancel className="h-12 rounded-xl font-bold text-slate-400 border-none hover:text-slate-800 hover:bg-slate-50 transition-all">
+                            Keep Branch
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
+                            className="h-12 px-6 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest text-xs"
+                        >
+                            Delete Permanently
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

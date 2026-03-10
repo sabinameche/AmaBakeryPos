@@ -27,6 +27,7 @@ export function ResetPasswordModal({ isOpen, onClose, user }: ResetPasswordModal
     const [newPassword, setNewPassword] = useState("amabakery@123");
     const [confirmPassword, setConfirmPassword] = useState("amabakery@123");
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
 
     if (!user) return null;
@@ -90,7 +91,7 @@ export function ResetPasswordModal({ isOpen, onClose, user }: ResetPasswordModal
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                             >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                             </button>
                         </div>
                     </div>
@@ -102,13 +103,20 @@ export function ResetPasswordModal({ isOpen, onClose, user }: ResetPasswordModal
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
-                                type="password"
+                                type={showConfirm ? "text" : "password"}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="pl-11 h-11 bg-slate-50 border-slate-100 rounded-xl focus:ring-destructive/20"
+                                className="pl-11 pr-11 h-11 bg-slate-50 border-slate-100 rounded-xl focus:ring-destructive/20"
                                 placeholder="••••••••"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirm(!showConfirm)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                                {showConfirm ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                            </button>
                         </div>
                     </div>
 

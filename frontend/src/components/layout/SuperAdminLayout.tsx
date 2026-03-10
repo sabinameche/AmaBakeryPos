@@ -50,7 +50,7 @@ export function SuperAdminLayout() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                                if (confirm("Are you sure you want to log out from HQ?")) logout();
+                                window.dispatchEvent(new CustomEvent("show-logout-confirm"));
                             }}
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 font-bold gap-2 rounded-xl transition-all active:scale-95"
                         >

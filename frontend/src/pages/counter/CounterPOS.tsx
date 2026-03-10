@@ -394,7 +394,7 @@ export default function CounterPOS() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                                if (confirm("Are you sure you want to log out?")) logout();
+                                window.dispatchEvent(new CustomEvent("show-logout-confirm"));
                             }}
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                             title="Logout"
@@ -748,7 +748,47 @@ export default function CounterPOS() {
                                             placeholder="0.00"
                                             className="h-14 text-2xl font-black text-center border-2 border-primary/20 focus:border-primary"
                                             value={cashReceived}
-                                            onChange={(e) => setCashReceived(e.target.value)}
+                                            min="0"
+                                            max="100000"
+                                            onKeyDown={(e) => {
+                                                // Allow control keys
+                                                const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', 'Escape'];
+                                                if (allowedKeys.includes(e.key)) return;
+
+                                                // Allow Ctrl/Cmd combos
+                                                if (e.ctrlKey || e.metaKey) return;
+
+                                                // Allow decimal point (only one)
+                                                if (e.key === '.') {
+                                                    if (cashReceived.includes('.')) e.preventDefault();
+                                                    return;
+                                                }
+
+                                                // Block anything that isn't a digit
+                                                if (!/^[0-9]$/.test(e.key)) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const numVal = parseFloat(val);
+
+                                                // Allow empty string for clearing
+                                                if (val === "") {
+                                                    setCashReceived("");
+                                                    return;
+                                                }
+
+                                                // Strictly enforce max 100,000 and non-negative
+                                                if (numVal > 100000) {
+                                                    setCashReceived("100000");
+                                                    toast.error("Maximum cash amount is 100,000");
+                                                } else if (numVal < 0) {
+                                                    setCashReceived("0");
+                                                } else {
+                                                    setCashReceived(val);
+                                                }
+                                            }}
                                             autoFocus
                                         />
                                     </div>

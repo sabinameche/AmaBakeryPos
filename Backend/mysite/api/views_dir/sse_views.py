@@ -246,7 +246,7 @@ def get_dashboard_data_sync(user, branch_id, role, request):
                         Sum("invoices__total_amount", filter=Q(invoices__created_at__date__gte=start_date, invoices__created_at__date__lte=end_date)),
                         Value(0.0, output_field=DecimalField())
                     )
-                ).values("name", "total_sales_per_branch").order_by("-total_sales_per_branch")[:5]),
+                ).values("id", "name", "total_sales_per_branch").order_by("-total_sales_per_branch")),
                 "top_selling_items": report_data["top_selling_items_count"],
             })
         else:

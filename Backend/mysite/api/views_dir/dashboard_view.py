@@ -157,7 +157,7 @@ class DashboardViewClass(APIView):
                         Sum("invoices__total_amount", filter=Q(invoices__created_at__date__gte=start_date, invoices__created_at__date__lte=end_date)),
                         Value(0.0, output_field=DecimalField())
                     )
-                ).values("name", "total_sales_per_branch").order_by("-total_sales_per_branch")[:5]),
+                ).values("id", "name", "total_sales_per_branch").order_by("-total_sales_per_branch")),
                 "top_selling_items": report_data["top_selling_items_count"],
             })
         else:
@@ -294,7 +294,7 @@ def report_dashboard(my_branch=None, request=None):
     sales_by_payment = get_distribution(Payment, period_filter_p, "payment_method")
     sales_by_status = list(Invoice.objects.filter(**base_filter).values("payment_status").annotate(total_amount=Coalesce(Sum("total_amount"), Value(0.0, output_field=DecimalField()))).order_by("-total_amount"))
 
-    top_selling = list(InvoiceItem.objects.filter(**period_filter_ii).values("product__name").annotate(total_orders=Sum("quantity")).annotate(total_sales=Sum(ExpressionWrapper(F("quantity") * F("unit_price") - F("discount_amount"), output_field=DecimalField(max_digits=12, decimal_places=2)))).order_by("-total_orders")[:5])
+    top_selling = list(InvoiceItem.objects.filter(**period_filter_ii).values("product__name").annotate(total_sold_units=Sum("quantity")).annotate(total_sales=Sum(ExpressionWrapper(F("quantity") * F("unit_price") - F("discount_amount"), output_field=DecimalField(max_digits=12, decimal_places=2)))).order_by("-total_sold_units")[:5])
 
     return {
         "success": True,

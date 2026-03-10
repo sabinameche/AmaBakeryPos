@@ -338,7 +338,7 @@ export default function KitchenDisplay() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => logout()}
+                onClick={() => window.dispatchEvent(new CustomEvent("show-logout-confirm"))}
                 className="h-10 w-10 text-red-500 hover:bg-red-500 rounded-full"
                 title="Logout"
               >

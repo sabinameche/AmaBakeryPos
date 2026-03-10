@@ -34,6 +34,16 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 interface Branch {
@@ -62,6 +72,8 @@ export default function SuperAdminAccess() {
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [editUser, setEditUser] = useState<UserData | null>(null);
     const [resetTargetUser, setResetTargetUser] = useState<UserData | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
 
@@ -160,12 +172,14 @@ export default function SuperAdminAccess() {
         }
     };
 
-    const handleDelete = async (user: UserData) => {
-        if (!confirm(`Are you sure you want to delete ${user.username}?`)) return;
+    const handleDelete = async () => {
+        if (!userToDelete) return;
 
         try {
-            await deleteUser(user.id);
+            await deleteUser(userToDelete.id);
             toast.success("Manager deleted");
+            setIsDeleteOpen(false);
+            setUserToDelete(null);
             loadData();
         } catch (err: any) {
             toast.error("Delete failed", { description: err.message });
@@ -279,7 +293,8 @@ export default function SuperAdminAccess() {
                                                         className="h-9 w-9 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleDelete(user);
+                                                            setUserToDelete(user);
+                                                            setIsDeleteOpen(true);
                                                         }}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -424,6 +439,32 @@ export default function SuperAdminAccess() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent className="rounded-[2rem] border-2 border-slate-50 shadow-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-2xl font-black text-slate-900">Remove Access?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 font-medium">
+                            Are you sure you want to delete manager <span className="text-primary font-bold">"@{userToDelete?.username}"</span>?
+                            This will revoke all administrative privileges immediately.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2 sm:gap-0">
+                        <AlertDialogCancel className="h-12 rounded-xl font-bold text-slate-400 border-none hover:bg-slate-50">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
+                            className="h-12 px-6 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest text-xs"
+                        >
+                            Confirm Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
