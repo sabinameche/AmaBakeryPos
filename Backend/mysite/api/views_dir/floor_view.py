@@ -270,15 +270,18 @@ class FloorViewClass(APIView):
         # 3. Check if floor has active orders (optional - business logic)
         # Uncomment if you want to prevent deletion of floors with active orders
 
-        if floor.active_orders.exists():
-            return Response(
-                {
-                    "success": False,
-                    "error": "Cannot delete",
-                    "message": "Floor has active orders. Complete orders first.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # print(floor)
+        # if floor.active_orders:
+        #     print("i am inside floor active orders!")
+        #     if floor.active_orders.exists():
+        #         return Response(
+        #             {
+        #                 "success": False,
+        #                 "error": "Cannot delete",
+        #                 "message": "Floor has active orders. Complete orders first.",
+        #             },
+        #             status=status.HTTP_400_BAD_REQUEST,
+        #         )
 
         # 4. Branch permission check
         if role == "BRANCH_MANAGER":
