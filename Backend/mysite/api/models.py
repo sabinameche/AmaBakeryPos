@@ -64,6 +64,11 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=['username','branch'],
+            name = 'unique_username_per_branch'
+        )]
 
 
 class Product(models.Model):
@@ -128,8 +133,12 @@ class Floor(models.Model):
     branch = models.ForeignKey(
         Branch, on_delete=models.CASCADE, related_name="floor_branch"
     )
-    name = models.CharField(max_length=25, blank=False, unique=True)
+    name = models.CharField(max_length=25, blank=False)
     table_count = models.IntegerField(default=1)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['name','branch'],name='unique_floor_per_branch')
+        ]
 
 
 class Invoice(models.Model):

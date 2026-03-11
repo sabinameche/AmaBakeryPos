@@ -141,8 +141,8 @@ class DashboardViewClass(APIView):
             "avg_orders": report_data["avg_order"],
             "total_sales_per_category": report_data["sales_by_category"],
             "sales_percent": report_data["growth_percent"],
-            "order_percent": report_data["growth_percent"],
-            "avg_order_percent": report_data["growth_percent"],
+            "order_percent": report_data["growth_order_percent"],
+            "avg_order_percent": report_data["avg_order_percent"],
             "total_user": user_count,
             "total_user_count": user_count,
             "total_branch": Branch.objects.all().count(),
@@ -227,6 +227,25 @@ def report_dashboard(my_branch=None, request=None):
     else:
         growth_percent = ((current_sales - prev_period_sales) / prev_period_sales) * 100
 
+    # order percent on kpi
+    prev_orders_count = (
+        Invoice.objects.filter(**prev_base_filter).aggregate(total_orders=Count("id"))["total_orders"] or 0
+    )
+    
+
+    if prev_orders_count == 0:
+        growth_order_percent = current_orders_count - prev_orders_count
+    else:
+        growth_order_percent = ((current_orders_count - prev_orders_count) / prev_orders_count) * 100
+    # avg order percent 
+    prev_avg_orders = prev_period_sales / prev_orders_count if prev_orders_count > 0 else 0
+
+    if prev_avg_orders == 0:
+        avg_order_percent = (avg_order - prev_avg_orders) 
+    else:
+        avg_order_percent = ((avg_order - prev_avg_orders) / prev_avg_orders)*100 
+
+
     # Trend Data
     trend_data = (
         Invoice.objects.filter(**base_filter)
@@ -302,6 +321,8 @@ def report_dashboard(my_branch=None, request=None):
         "total_month_orders": current_orders_count,
         "avg_order": float(avg_order),
         "growth_percent": float(growth_percent),
+        "growth_order_percent": float(growth_order_percent),
+        "avg_order_percent": float(avg_order_percent),
         "trend_chart": trend_chart,
         "Weekely_Sales": weekly_sales_dict,
         "sales_by_category": sales_by_category,
