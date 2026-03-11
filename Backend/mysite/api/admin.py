@@ -83,6 +83,8 @@ class InvoiceAdmin(admin.ModelAdmin):
     list_display = [
         "invoice_number",
         "id",
+        "notes",
+        "description",
         "branch",
         "customer",
         "invoice_type",
@@ -107,6 +109,8 @@ class InvoiceAdmin(admin.ModelAdmin):
                 "fields": (
                     "branch",
                     "floor",
+                    "notes",
+                    "description",
                     "customer",
                     "uid",
                     "invoice_number",

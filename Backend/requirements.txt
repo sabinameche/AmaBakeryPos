@@ -20,3 +20,4 @@ whitenoise
 dj-database-url
 uvicorn
 psycopg2-binary
+selenium pytest pytest-xdist webdriver-manager
