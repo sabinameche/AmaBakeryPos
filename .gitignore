@@ -16,4 +16,5 @@ __pycache__/
 *.pyd
 .Python
 .env
+wsl_env/
 
