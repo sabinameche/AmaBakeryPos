@@ -182,10 +182,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "SUPER_ADMIN",
         ]:
             invoice.payment_status = "PAID"
-        elif invoice.paid_amount > 0 and role == "WAITER" :
+        elif invoice.paid_amount<invoice.total_amount:
             invoice.payment_status = "PARTIAL"
-        elif invoice.paid_amount>0:
-            invoice.payment_status = "PARTIAL"
+        elif invoice.paid_amount >= invoice.total_amount and role == "WAITER":
+            invoice.payment_status = "WAITER PAID"
         else:
             invoice.payment_status = "PENDING"
 
@@ -235,7 +235,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 subtotal + (instance.tax_amount or 0) - (instance.discount or 0)
             )
 
-        # Re-evaluate payment status
+
+
+
         if instance.paid_amount >= instance.total_amount and role in [
             "COUNTER",
             "ADMIN",
@@ -243,10 +245,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "SUPER_ADMIN",
         ]:
             instance.payment_status = "PAID"
-        elif instance.paid_amount > 0:
+        elif instance.paid_amount<instance.total_amount:
             instance.payment_status = "PARTIAL"
+        elif instance.paid_amount >= instance.total_amount and role == "WAITER":
+            instance.payment_status = "WAITER PAID"
         else:
             instance.payment_status = "PENDING"
+
 
         instance.save()
         return instance

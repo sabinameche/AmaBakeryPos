@@ -82,6 +82,8 @@ class CustomerAdmin(admin.ModelAdmin):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = [
         "invoice_number",
+        "notes",
+        "description",
         "id",
         "branch",
         "customer",
@@ -105,6 +107,8 @@ class InvoiceAdmin(admin.ModelAdmin):
             "Basic Info",
             {
                 "fields": (
+                    "notes",
+                    "description",
                     "branch",
                     "floor",
                     "customer",
