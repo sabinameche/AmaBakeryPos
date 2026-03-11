@@ -30,7 +30,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + ("user_type", "branch", "full_name")
 
     fieldsets = UserAdmin.fieldsets + (
-        ("Custom Fields", {"fields": ("phone", "branch", "full_name", "user_type")}),
+        ("Custom Fields", {"fields": ("phone","kitchentype", "branch", "full_name", "user_type")}),
     )
 
 
