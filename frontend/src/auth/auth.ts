@@ -83,7 +83,13 @@ export function getCurrentUser() {
   const u = localStorage.getItem("currentUser");
   if (!u || u === "undefined") return null;
   try {
-    return JSON.parse(u);
+    const parsed = JSON.parse(u);
+    // Ensure normalization of field names if coming from legacy or mock data
+    return {
+      ...parsed,
+      kitchentype_id: parsed.kitchentype_id || parsed.kitchenType,
+      kitchentype_name: parsed.kitchentype_name || (parsed.kitchenType ? parsed.kitchenType.toUpperCase() : undefined)
+    };
   } catch {
     return null;
   }

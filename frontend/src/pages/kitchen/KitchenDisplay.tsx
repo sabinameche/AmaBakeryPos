@@ -161,7 +161,9 @@ export default function KitchenDisplay() {
                 menuItem: {
                   name: product?.name || `Product #${item.product}`,
                   category: product?.category_name || 'Uncategorized',
-                  categoryId: product?.category // Add category ID for filtering
+                  categoryId: product?.category,
+                  // Use the kitchen type ID directly from the product data
+                  kitchenTypeId: product?.kitchentype_id || product?.kitchenType
                 },
                 notes: item.description || ""
               };
@@ -196,18 +198,26 @@ export default function KitchenDisplay() {
     .map(order => {
       if (!order || !order.items) return null;
 
-      // Filter items based on category's kitchen type
+      // Filter items based on kitchen type
       const relevantItems = order.items.filter((item: any) => {
         if (!item || !item.menuItem) return false;
-
-        // Find the category object for this item
-        const itemCat = (categories || []).find(c => c && c.id === item.menuItem.categoryId);
 
         // If user has no specific kitchen assigned (e.g. Admin), show all
         if (!userKitchenId) return true;
 
-        // Match the item's kitchen type with the user's assigned kitchen
-        return itemCat?.kitchentype === userKitchenId;
+        // Get the kitchen type for this item
+        // Primary source: kitchenTypeId we attached in loadData
+        // Secondary/Fallback: Look up via categories if it's not on the item
+        let itemKitchenId = item.menuItem.kitchenTypeId;
+
+        if (itemKitchenId === undefined || itemKitchenId === null) {
+          const itemCat = (categories || []).find(c => c && c.id === item.menuItem.categoryId);
+          itemKitchenId = itemCat?.kitchentype;
+        }
+
+        // Match with the user's assigned kitchen
+        // Use loose equality (==) in case one is a string and other is a number
+        return String(itemKitchenId) === String(userKitchenId);
       });
 
       // Return order with ONLY relevant items, or null if no items match
