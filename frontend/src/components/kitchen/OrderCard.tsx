@@ -109,7 +109,7 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
             </div>
             {item.notes && (
               <div className="mt-2 flex items-start gap-1.5 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100">
-                <span className="text-amber-600 text-[10px] font-black uppercase mt-0.5 tracking-tighter">SPEC:</span>
+                <span className="text-amber-600 text-[10px] font-black uppercase mt-0.5 tracking-tighter">ITEM SPEC:</span>
                 <p className="text-[13px] text-amber-700 font-bold italic leading-tight">
                   {item.notes}
                 </p>
@@ -117,6 +117,17 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
             )}
           </div>
         ))}
+        {order.notes && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl relative overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-600 font-black uppercase text-[10px] tracking-widest mt-0.5">ORDER NOTE:</span>
+              <p className="text-red-700 font-bold text-sm italic leading-tight flex-1">
+                {order.notes}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}

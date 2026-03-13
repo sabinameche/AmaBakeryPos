@@ -88,8 +88,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden bg-gradient-cream">
       {/* BRANDING SIDE */}
-      <div className="w-full lg:w-1/2 relative bg-primary overflow-hidden py-12 lg:py-0 flex items-center justify-center rounded-b-[3.5rem] lg:rounded-none shadow-2xl lg:shadow-none z-10 transition-all duration-700">
+      <div className="w-full lg:w-1/2 relative bg-primary overflow-hidden pt-10 pb-40 flex items-start justify-center lg:py-0 lg:items-center lg:justify-center lg:rounded-none shadow-2xl lg:shadow-none z-10 transition-all duration-700">
         {/* Background Decorative Elements */}
+        {/* ... (decorative elements restored in previous step) ... */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute -top-10 -left-10 lg:top-20 lg:left-20 w-48 h-48 lg:w-96 lg:h-96 bg-white rounded-full blur-3xl animate-pulse" />
           <div className="absolute -bottom-10 -right-10 lg:bottom-20 lg:right-20 w-64 h-64 lg:w-[32rem] lg:h-[32rem] bg-white rounded-full blur-[100px] animate-pulse delay-700" />
@@ -111,33 +112,20 @@ export default function Login() {
                 Management Suite
               </p>
             </div>
-
-            <a
-              href="https://www.draguptech.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 lg:mt-12 text-[10px] lg:text-sm font-medium text-white/50 hover:text-white transition-all duration-500 flex items-center justify-center gap-3 group tracking-[0.2em] uppercase"
-            >
-              <span className="h-px w-4 lg:w-10 bg-white/10 group-hover:w-8 lg:group-hover:w-16 transition-all duration-700" />
-              <span>
-                Developed by <span className="font-extrabold text-white/90">Dragup Tech</span>
-              </span>
-              <span className="h-px w-4 lg:w-10 bg-white/10 group-hover:w-8 lg:group-hover:w-16 transition-all duration-700" />
-            </a>
           </div>
         </div>
       </div>
 
       {/* LOGIN SIDE */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 lg:p-12 -mt-10 lg:mt-0 relative z-20">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 lg:p-12 -mt-32 lg:mt-0 relative z-20">
         <div className="w-full max-w-lg lg:max-w-2xl">
-          <div className="bg-white rounded-[2.5rem] lg:rounded-[3.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-8 md:p-12 lg:p-20 lg:px-24 transition-all duration-500 hover:shadow-[0_20px_70px_rgba(0,0,0,0.18)] border border-slate-100">
-            <div className="mb-8 lg:mb-12 lg:text-left text-center">
+          <div className="bg-white rounded-[2.5rem] lg:rounded-[3.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 md:p-12 lg:p-20 lg:px-24 transition-all duration-500 hover:shadow-[0_20px_70px_rgba(0,0,0,0.18)] border border-slate-100">
+            <div className="mb-6 lg:mb-12 lg:text-left text-center">
               <h2 className="text-2xl lg:text-4xl font-black text-slate-900 mb-1 lg:mb-3">Welcome Back</h2>
               <p className="text-slate-500 text-sm lg:text-base font-medium italic">Sign in to access your dashboard</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6 lg:space-y-8">
+            <form onSubmit={handleLogin} className="space-y-4 lg:space-y-8">
               <div className="group">
                 <label className="text-[10px] lg:text-xs font-black uppercase tracking-widest text-slate-400 ml-1 mb-1.5 lg:mb-2 block group-focus-within:text-primary transition-colors">
                   Username
@@ -192,7 +180,7 @@ export default function Login() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 lg:h-16 rounded-xl lg:rounded-2xl text-sm lg:text-lg font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all mt-2 lg:mt-6"
+                className="w-full h-12 lg:h-16 rounded-xl lg:rounded-2xl text-sm lg:text-lg font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all lg:mt-6"
               >
                 {loading ? "Verifying..." : "Sign In"}
                 <ArrowRight className="h-5 w-5 lg:h-6 lg:w-6 ml-2" />

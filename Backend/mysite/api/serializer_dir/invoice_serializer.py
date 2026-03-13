@@ -101,8 +101,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 notes="Initial payment during invoice creation",
             )
             if role == "WAITER":
-                invoice.payment_status = "PARTIAL"
-                invoice.received_by_waiter = user
+                if invoice.paid_amount >= invoice.total_amount:
+                    invoice.payment_status = "WAITER RECEIVED"
+                    invoice.received_by_waiter = user
+                elif invoice.paid_amount<invoice.total_amount and invoice.paid_amount>0:
+                    invoice.payment_status = "PARTIAL"
+
+
             elif role in ["COUNTER", "BRANCH_MANAGER", "ADMIN", "SUPER_ADMIN"]:
                 invoice.received_by_counter = user
 
@@ -182,10 +187,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "SUPER_ADMIN",
         ]:
             invoice.payment_status = "PAID"
-        elif invoice.paid_amount<invoice.total_amount:
+        elif invoice.paid_amount<invoice.total_amount and invoice.paid_amount>0:
             invoice.payment_status = "PARTIAL"
         elif invoice.paid_amount >= invoice.total_amount and role == "WAITER":
-            invoice.payment_status = "WAITER PAID"
+            invoice.payment_status = "WAITER RECEIVED"
         else:
             invoice.payment_status = "PENDING"
 
@@ -245,10 +250,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "SUPER_ADMIN",
         ]:
             instance.payment_status = "PAID"
-        elif instance.paid_amount<instance.total_amount:
+        elif instance.paid_amount<instance.total_amount and instance.paid_amount>0:
             instance.payment_status = "PARTIAL"
         elif instance.paid_amount >= instance.total_amount and role == "WAITER":
-            instance.payment_status = "WAITER PAID"
+            instance.payment_status = "WAITER RECEIVED"
         else:
             instance.payment_status = "PENDING"
 

@@ -66,7 +66,11 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     className: 'bg-success/15 text-success border-success/30',
   },
   'waiter-paid': {
-    label: 'Waiter Paid',
+    label: 'Waiter Received',
+    className: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  },
+  'waiter received': {
+    label: 'Waiter Received',
     className: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   },
 };

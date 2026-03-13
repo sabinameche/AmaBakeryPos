@@ -327,13 +327,34 @@ export default function SuperAdminOverview() {
                     <h3 className="text-lg font-black uppercase tracking-tight mb-6 text-center capitalize">{timeframe} Category Split</h3>
                     <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={(dashboardData?.total_sales_per_category || []).map((item: any) => ({ name: item.product__category__name, value: parseFloat(item.category_total_sales) }))} layout="vertical">
+                            <BarChart
+                                data={(dashboardData?.total_sales_per_category || []).map((item: any) => ({ name: item.product__category__name, value: parseFloat(item.category_total_sales) }))}
+                                layout="vertical"
+                                margin={{ left: -30, right: 100, top: 0, bottom: 0 }}
+                            >
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} width={80} />
-                                <Tooltip formatter={(v: any) => [`Rs.${Number(v).toLocaleString()}`, 'Sales']} />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }}
+                                    width={90}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                                    formatter={(v: any) => [`Rs.${Number(v).toLocaleString()}`, 'Sales']}
+                                />
+                                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={20}>
                                     {(dashboardData?.total_sales_per_category || []).map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                    <LabelList dataKey="value" position="right" formatter={(val: any) => `Rs.${Number(val).toLocaleString()}`} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#64748b' }} />
+                                    <LabelList
+                                        dataKey="value"
+                                        position="right"
+                                        offset={12}
+                                        formatter={(val: any) => `Rs.${Number(val).toLocaleString()}`}
+                                        style={{ fontSize: '10px', fontWeight: 'bold', fill: '#64748b' }}
+                                    />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -357,12 +378,14 @@ export default function SuperAdminOverview() {
                                 </Pie>
                                 <Tooltip formatter={(v: any) => [`Rs.${Number(v).toLocaleString()}`, 'Total']} />
                                 <Legend
-                                    layout="vertical"
-                                    align="right"
-                                    verticalAlign="middle"
+                                    layout="horizontal"
+                                    align="center"
+                                    verticalAlign="bottom"
+                                    iconType="circle"
+                                    wrapperStyle={{ paddingTop: '20px' }}
                                     formatter={(value, entry: any) => (
-                                        <span className="text-[10px] font-black uppercase text-slate-500 ml-2">
-                                            {value}: <span className="text-slate-900">Rs.{Number(entry.payload.value).toLocaleString()}</span>
+                                        <span className="text-[10px] font-black uppercase text-slate-500 ml-1">
+                                            {value}: <span className="text-slate-900 font-black">Rs.{Number(entry.payload.value).toLocaleString()}</span>
                                         </span>
                                     )}
                                 />
@@ -388,12 +411,14 @@ export default function SuperAdminOverview() {
                                 </Pie>
                                 <Tooltip formatter={(v: any) => [`Rs.${Number(v).toLocaleString()}`, 'Total']} />
                                 <Legend
-                                    layout="vertical"
-                                    align="right"
-                                    verticalAlign="middle"
+                                    layout="horizontal"
+                                    align="center"
+                                    verticalAlign="bottom"
+                                    iconType="circle"
+                                    wrapperStyle={{ paddingTop: '20px' }}
                                     formatter={(value, entry: any) => (
-                                        <span className="text-[10px] font-black uppercase text-slate-500 ml-2">
-                                            {value}: <span className="text-slate-900">Rs.{Number(entry.payload.value).toLocaleString()}</span>
+                                        <span className="text-[10px] font-black uppercase text-slate-500 ml-1">
+                                            {value}: <span className="text-slate-900 font-black">Rs.{Number(entry.payload.value).toLocaleString()}</span>
                                         </span>
                                     )}
                                 />
@@ -425,7 +450,7 @@ export default function SuperAdminOverview() {
                 </div>
             </div>
 
-            {/* Branch Management Table */}
+            {/* Branch Management Section */}
             <div className="card-elevated border-2 border-slate-50 overflow-hidden rounded-[2rem]">
                 <div className="px-6 py-5 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                     <h3 className="text-lg font-black uppercase tracking-tight">Active Branches</h3>
@@ -434,7 +459,53 @@ export default function SuperAdminOverview() {
                         <Input placeholder="Search locations..." className="pl-9 h-11 bg-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
                 </div>
-                <div className="overflow-x-auto">
+
+                {/* Mobile List View */}
+                <div className="md:hidden divide-y divide-slate-100 bg-white">
+                    {filteredBranches.map(branch => (
+                        <div key={branch.id} className="p-5 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                        <Store className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">{branch.name}</p>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{branch.location}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Revenue</p>
+                                    <p className="font-black text-primary">Rs.{(parseFloat(branch.revenue as any) || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2">
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Manager</p>
+                                    <p className="text-xs font-bold text-slate-600 truncate max-w-[120px]">
+                                        {branch.branch_manager?.username || "Not Assigned"}
+                                    </p>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    onClick={() => handleAccessBranch(branch)}
+                                    className="h-9 px-5 rounded-xl font-black uppercase text-[10px] shadow-sm active:scale-95 transition-all"
+                                >
+                                    Access Branch <ExternalLink className="h-3 w-3 ml-2" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                    {filteredBranches.length === 0 && (
+                        <div className="p-12 text-center">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No branches found</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                             <tr>

@@ -13,6 +13,7 @@ import {
     QrCode,
     Receipt,
     LogOut,
+    Key,
     Clock,
     Printer,
     X,
@@ -44,6 +45,13 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 interface CartItemData {
@@ -372,36 +380,43 @@ export default function CounterPOS() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="text-right hidden md:block">
-                        <p className="text-sm font-black text-slate-700">{operator?.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{operator?.role}</p>
-                    </div>
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => navigate('/counter/orders')} className="rounded-xl hover:bg-slate-100" title="Order History">
+                        <Receipt className="h-5 w-5 text-slate-500" />
+                    </Button>
                     <Separator orientation="vertical" className="h-8" />
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowChangePassword(true)}
-                            className="text-slate-500 hover:text-primary font-bold transition-all px-3 hidden sm:flex"
-                        >
-                            Change Password
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => navigate('/counter/orders')} className="rounded-xl hover:bg-slate-100" title="Order History">
-                            <Receipt className="h-5 w-5 text-slate-500" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                                window.dispatchEvent(new CustomEvent("show-logout-confirm"));
-                            }}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                            title="Logout"
-                        >
-                            <LogOut className="h-5 w-5" />
-                        </Button>
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-auto p-2 hover:bg-slate-50 flex items-center gap-3 rounded-2xl transition-all text-left">
+                                <div className="text-right hidden md:block">
+                                    <p className="text-sm font-black text-slate-700">{operator?.name || "Counter User"}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{operator?.role}</p>
+                                </div>
+                                <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-sm">
+                                    <User className="h-5 w-5" />
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 font-bold z-[100]">
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer transition-colors"
+                                onClick={() => setShowChangePassword(true)}
+                            >
+                                <Key className="mr-2 h-4 w-4 text-slate-400" />
+                                <span>Change Password</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 transition-colors"
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent("show-logout-confirm"));
+                                }}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Logout</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 

@@ -387,7 +387,7 @@ function OrderCard({
   const currentUser = getCurrentUser();
   const isReady = order.invoice_status === "READY";
   const isCompleted = order.invoice_status === "COMPLETED";
-  const isPaid = order.payment_status === "PAID" || isCompleted;
+  const isPaid = order.payment_status === "PAID" || order.payment_status === "WAITER RECEIVED" || isCompleted;
   const [showItems, setShowItems] = useState(false);
 
   // Check if current user is the one who picked it up

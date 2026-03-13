@@ -9,6 +9,7 @@ import {
   Bell,
   CheckCircle2,
   RotateCcw,
+  Key,
   MapPin,
   Utensils,
   Coffee,
@@ -259,28 +260,51 @@ export default function KitchenDisplay() {
       <header className="flex-none bg-white border-b px-6 pr-14 py-4 shadow-sm z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ChefHat className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h1 className="text-xl font-bold text-foreground">
-                    {userKitchenName || 'General Kitchen'}
-                  </h1>
-                  <div className="bg-primary/5 text-primary text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-primary/10 flex items-center gap-1">
-                    <MapPin className="h-2 w-2" />
-                    {branchName}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-auto p-2 hover:bg-slate-50 flex items-center gap-4 rounded-2xl transition-all -ml-2 text-left">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0 shadow-sm">
+                    <ChefHat className="h-6 w-6" />
                   </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Live Feed • {userName}
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h1 className="text-xl font-bold text-foreground">
+                        {userKitchenName || 'General Kitchen'}
+                      </h1>
+                      <div className="bg-primary/5 text-primary text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-primary/10 flex items-center gap-1">
+                        <MapPin className="h-2 w-2" />
+                        {branchName}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Live Feed • {userName}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 rounded-2xl p-2 font-bold">
+                <DropdownMenuItem
+                  className="h-10 rounded-xl cursor-pointer transition-colors"
+                  onClick={() => setShowChangePassword(true)}
+                >
+                  <Key className="mr-2 h-4 w-4 text-slate-400" />
+                  <span>Change Password</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                <DropdownMenuItem
+                  className="h-10 rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 transition-colors"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("show-logout-confirm"));
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <div className="h-10 w-px bg-slate-200" />
 
@@ -331,28 +355,11 @@ export default function KitchenDisplay() {
                 variant="outline"
                 size="sm"
                 onClick={playNotificationSound}
-                className="text-primary hover:bg-primary hover:text-white font-bold transition-all px-3 gap-2 rounded-xl"
+                className="text-primary hover:bg-primary hover:text-white font-bold transition-all px-3 gap-2 rounded-xl border-slate-200"
                 title="Test notification sound"
               >
                 <Volume2 className="h-4 w-4" />
                 Test Sound
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowChangePassword(true)}
-                className="text-slate-500 hover:text-white font-bold transition-all px-3 hidden sm:flex"
-              >
-                Change Password
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => window.dispatchEvent(new CustomEvent("show-logout-confirm"))}
-                className="h-10 w-10 text-red-500 hover:bg-red-500 rounded-full"
-                title="Logout"
-              >
-                <LogOut className="h-5 w-5" />
               </Button>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
@@ -440,12 +447,6 @@ export default function KitchenDisplay() {
 
       {/* Kanban Board */}
       <main className="flex-1 p-4 overflow-hidden relative">
-        {loading && (
-          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-            <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-            <p className="text-xl font-bold text-slate-600">Syncing with backend...</p>
-          </div>
-        )}
         <div className="grid grid-cols-2 gap-6 h-full">
           {/* New Orders Column */}
           <div className="flex flex-col h-full bg-slate-100/50 rounded-xl border border-slate-200 overflow-hidden">

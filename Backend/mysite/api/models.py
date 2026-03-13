@@ -157,7 +157,7 @@ class Invoice(models.Model):
         ("PARTIAL", "Partially Paid"),
         ("PAID", "Fully Paid"),
         ("CANCELLED", "Cancelled"),
-        ("WAITER PAID", "Waiter Paid"),
+        ("WAITER RECEIVED", "Waiter Received"),
     ]
 
     INVOICE_STATUS_CHOICES = [

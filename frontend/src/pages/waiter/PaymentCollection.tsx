@@ -79,7 +79,7 @@ export default function PaymentCollection() {
 
   const handlePaymentClick = (order: any) => {
     setSelectedOrder(order);
-    const isPaid = order.payment_status === 'PAID' || (order.payment_status === 'PARTIAL' && order.received_by_waiter);
+    const isPaid = order.payment_status === 'PAID' || order.payment_status === 'WAITER RECEIVED' || (order.payment_status === 'PARTIAL' && order.received_by_waiter);
     if (isPaid) {
       setShowAlreadyPaidDialog(true);
     } else {
@@ -170,8 +170,8 @@ export default function PaymentCollection() {
 
   };
 
-  const pendingOrdersList = orders.filter(o => !(o.payment_status === 'PAID' || (o.payment_status === 'PARTIAL' && o.received_by_waiter)));
-  const completedOrdersList = orders.filter(o => o.payment_status === 'PAID' || (o.payment_status === 'PARTIAL' && o.received_by_waiter));
+  const pendingOrdersList = orders.filter(o => !(o.payment_status === 'PAID' || o.payment_status === 'WAITER RECEIVED' || (o.payment_status === 'PARTIAL' && o.received_by_waiter)));
+  const completedOrdersList = orders.filter(o => o.payment_status === 'PAID' || o.payment_status === 'WAITER RECEIVED' || (o.payment_status === 'PARTIAL' && o.received_by_waiter));
 
   const renderOrderCard = (order: any) => (
     <button
@@ -188,7 +188,7 @@ export default function PaymentCollection() {
         </div>
         <StatusBadge
           status={
-            (order.payment_status === 'PAID' || (order.payment_status === 'PARTIAL' && order.received_by_waiter))
+            (order.payment_status === 'PAID' || order.payment_status === 'WAITER RECEIVED' || (order.payment_status === 'PARTIAL' && order.received_by_waiter))
               ? 'paid'
               : order.payment_status?.toLowerCase() || 'pending'
           }
@@ -197,15 +197,12 @@ export default function PaymentCollection() {
 
       <div className="p-4">
         <div className="space-y-1 mb-3">
-          {order.items?.slice(0, 3).map((item: any, idx: number) => (
+          {order.items?.map((item: any, idx: number) => (
             <div key={idx} className="flex justify-between text-sm text-slate-600">
               <span>{item.quantity}× {item.product_name || 'Item'}</span>
               <span className="text-slate-400 tabular-nums">Rs.{Number(item.unit_price * item.quantity).toFixed(0)}</span>
             </div>
           ))}
-          {order.items?.length > 3 && (
-            <p className="text-[10px] text-muted-foreground">+ {order.items.length - 3} more items</p>
-          )}
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t border-dashed border-slate-100">

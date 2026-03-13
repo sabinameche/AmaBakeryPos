@@ -339,6 +339,7 @@ export default function AdminDashboard() {
                   value: parseFloat(String(item.category_total_sales || 0)) || 0
                 }))}
                 layout="vertical"
+                margin={{ left: -30, right: 80, top: 0, bottom: 0 }}
               >
                 <XAxis type="number" hide />
                 <YAxis
@@ -346,19 +347,25 @@ export default function AdminDashboard() {
                   type="category"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fontWeight: 800, fill: '#64748b' }}
-                  width={100}
+                  tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
+                  width={90}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}
                   formatter={(value: any) => [`Rs.${Number(value).toLocaleString()}`, 'Sales']}
                 />
-                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
+                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={20}>
                   {(dashboardData?.total_sales_per_category || []).map((_: any, index: number) => (
                     <Cell key={`cell-cat-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
-                  <LabelList dataKey="value" position="right" formatter={(val: any) => `Rs.${Number(val).toLocaleString()}`} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#64748b' }} />
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    offset={12}
+                    formatter={(val: any) => `Rs.${Number(val).toLocaleString()}`}
+                    style={{ fontSize: '10px', fontWeight: 'bold', fill: '#64748b' }}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -388,11 +395,13 @@ export default function AdminDashboard() {
                 </Pie>
                 <Tooltip formatter={(value: any) => [`Rs.${Number(value).toLocaleString()}`, 'Total']} />
                 <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  wrapperStyle={{ paddingTop: '20px' }}
                   formatter={(value, entry: any) => (
-                    <span className="text-[10px] font-black uppercase text-slate-500 ml-2">
+                    <span className="text-[10px] font-black uppercase text-slate-500 ml-1">
                       {value}: <span className="text-slate-900 font-black">Rs.{Number(entry.payload.value).toLocaleString()}</span>
                     </span>
                   )}
@@ -425,11 +434,13 @@ export default function AdminDashboard() {
                 </Pie>
                 <Tooltip formatter={(value: any) => [`Rs.${Number(value).toLocaleString()}`, 'Total']} />
                 <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  wrapperStyle={{ paddingTop: '20px' }}
                   formatter={(value, entry: any) => (
-                    <span className="text-[10px] font-black uppercase text-slate-500 ml-2">
+                    <span className="text-[10px] font-black uppercase text-slate-500 ml-1">
                       {value}: <span className="text-slate-900 font-black">Rs.{Number(entry.payload.value).toLocaleString()}</span>
                     </span>
                   )}
@@ -522,7 +533,7 @@ export default function AdminDashboard() {
               (dashboardData?.top_selling_items || []).slice(0, 5).map((item: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between">
                   <span className="font-bold text-slate-700">{item.product__name}</span>
-                  <span className="text-xs font-black bg-slate-50 px-3 py-1 rounded-full text-slate-500">{item.total_orders} Sold</span>
+                  <span className="text-xs font-black bg-slate-50 px-3 py-1 rounded-full text-slate-500">{item.total_sold_units || item.total_orders || 0} Sold</span>
                 </div>
               ))
             )}

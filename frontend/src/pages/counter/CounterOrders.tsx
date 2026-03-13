@@ -18,7 +18,8 @@ import {
     FileText,
     Check,
     User,
-    LogOut
+    LogOut,
+    Key
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,13 @@ import { getCurrentUser, logout } from "@/auth/auth";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { X } from "lucide-react";
 import { useOrdersWebSocket } from "@/hooks/useOrdersWebSocket";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function CounterOrders() {
     const navigate = useNavigate();
@@ -177,7 +185,7 @@ export default function CounterOrders() {
     const handlePaymentSubmit = async () => {
         if (!selectedOrder) return;
         // Allow 0 amount if we are just confirming waiter handover
-        const isConfirmingHandover = (selectedOrder.payment_status === 'PAID' || selectedOrder.payment_status === 'PARTIAL' || selectedOrder.payment_status === 'WAITER PAID') && selectedOrder.received_by_waiter && !selectedOrder.received_by_counter && parseFloat(selectedOrder.due_amount || 0) <= 0;
+        const isConfirmingHandover = (selectedOrder.payment_status === 'PAID' || selectedOrder.payment_status === 'PARTIAL' || selectedOrder.payment_status === 'WAITER RECEIVED') && selectedOrder.received_by_waiter && !selectedOrder.received_by_counter && parseFloat(selectedOrder.due_amount || 0) <= 0;
         if (!isConfirmingHandover && (!paymentAmount || parseFloat(paymentAmount) <= 0)) {
             toast.error("Please enter a valid amount");
             return;
@@ -201,8 +209,8 @@ export default function CounterOrders() {
     };
 
     const getDisplayStatus = (order: any) => {
-        if (order.payment_status === 'PAID' && order.received_by_waiter && !order.received_by_counter) {
-            return 'waiter-paid';
+        if ((order.payment_status === 'PAID' || order.payment_status === 'WAITER RECEIVED') && order.received_by_waiter && !order.received_by_counter) {
+            return 'waiter-paid'; // maps to 'Waiter Received' label in StatusBadge
         }
         return order.payment_status?.toLowerCase() || 'unpaid';
     };
@@ -237,14 +245,6 @@ export default function CounterOrders() {
 
                 <div className="flex items-center gap-4">
                     <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowChangePassword(true)}
-                        className="text-slate-500 hover:text-white font-bold transition-all px-3 hidden sm:flex"
-                    >
-                        Change Password
-                    </Button>
-                    <Button
                         variant="default"
                         onClick={() => navigate('/counter/pos')}
                         className="h-11 px-6 rounded-xl font-black bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2"
@@ -252,18 +252,39 @@ export default function CounterOrders() {
                         <ShoppingBag className="h-5 w-5" />
                         Sell Items
                     </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                            window.dispatchEvent(new CustomEvent("show-logout-confirm"));
-                        }}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                        title="Logout"
-                    >
-                        <LogOut className="h-5 w-5" />
-                    </Button>
+                    <Separator orientation="vertical" className="h-8" />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-auto p-2 hover:bg-slate-50 flex items-center gap-3 rounded-2xl transition-all text-left">
+                                <div className="text-right hidden md:block">
+                                    <p className="text-sm font-black text-slate-700">{currentUser?.name || "Counter User"}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{currentUser?.role}</p>
+                                </div>
+                                <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-sm">
+                                    <User className="h-5 w-5" />
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 font-bold z-[100]">
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer transition-colors"
+                                onClick={() => setShowChangePassword(true)}
+                            >
+                                <Key className="mr-2 h-4 w-4 text-slate-400" />
+                                <span>Change Password</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 transition-colors"
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent("show-logout-confirm"));
+                                }}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Logout</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 
@@ -397,7 +418,7 @@ export default function CounterOrders() {
                                                     <StatusBadge
                                                         status={getDisplayStatus(order)}
                                                         className="text-[11px] px-2.5 py-1"
-                                                        label={getDisplayStatus(order) === 'waiter-paid' ? `Paid to ${order.received_by_waiter_name || 'Waiter'}` : undefined}
+                                                        label={getDisplayStatus(order) === 'waiter-paid' ? `Received by ${order.received_by_waiter_name || 'Waiter'}` : undefined}
                                                     />
                                                     {order.payment_status === 'PAID' && (
                                                         <div className="h-5 w-5 rounded-full bg-success/20 flex items-center justify-center">

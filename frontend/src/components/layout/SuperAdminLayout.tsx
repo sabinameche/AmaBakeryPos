@@ -3,7 +3,14 @@ import { Outlet } from "react-router-dom";
 import { SuperAdminSidebar } from "@/components/layout/SuperAdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, LogOut, User as UserIcon, Shield } from "lucide-react";
+import { Menu, LogOut, User as UserIcon, Shield, Key } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { logout, getCurrentUser } from "@/auth/auth";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
 
@@ -26,38 +33,39 @@ export function SuperAdminLayout() {
                     <span className="font-black text-slate-800 tracking-tight uppercase text-xs tracking-widest">HQ Command Center</span>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <p className="text-sm font-black text-slate-900 leading-none">{user?.username || "Super Admin"}</p>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">Global Administrator</p>
-                        </div>
-                        <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white">
-                            <UserIcon className="h-5 w-5" />
-                        </div>
-                    </div>
-                    <div className="h-8 w-px bg-slate-100" />
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsResetModalOpen(true)}
-                            className="text-slate-500 hover:text-white font-bold transition-all px-3"
-                        >
-                            Change Password
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                                window.dispatchEvent(new CustomEvent("show-logout-confirm"));
-                            }}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 font-bold gap-2 rounded-xl transition-all active:scale-95"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            Logout
-                        </Button>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-auto p-2 hover:bg-slate-50 flex items-center gap-3 rounded-2xl transition-all">
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-slate-900 leading-none">{user?.username || "Super Admin"}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">Global Administrator</p>
+                                </div>
+                                <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-sm">
+                                    <UserIcon className="h-5 w-5" />
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 font-bold">
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer transition-colors"
+                                onClick={() => setIsResetModalOpen(true)}
+                            >
+                                <Key className="mr-2 h-4 w-4 text-slate-400" />
+                                <span>Change Password</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                            <DropdownMenuItem
+                                className="h-10 rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 transition-colors"
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent("show-logout-confirm"));
+                                }}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Logout</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 
