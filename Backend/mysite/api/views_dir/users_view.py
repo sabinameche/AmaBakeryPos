@@ -43,12 +43,12 @@ class UserViewClass(APIView):
         role = self.get_user_role(request.user)
 
         if role == "SUPER_ADMIN":
-            return User.objects.all()
+            return User.objects.filter(is_deleted = False)
         elif role == "ADMIN":
-            return User.objects.exclude(is_superuser=True)
+            return User.objects.exclude(is_superuser=True,is_deleted = True)
         elif role == "BRANCH_MANAGER":
             if branch := getattr(request.user, "branch", None):
-                return User.objects.filter(branch=branch)
+                return User.objects.filter(branch=branch,is_deleted = False)
         return User.objects.none()
 
     # --- GET (List or Retrieve) ---
@@ -57,7 +57,7 @@ class UserViewClass(APIView):
         if id:
             # Get single user
             try:
-                user = User.objects.get(id=id)
+                user = User.objects.get(id=id,is_deleted = False)
             except User.DoesNotExist:
                 return Response(
                     {"success": False, "message": "User not found"},
@@ -154,7 +154,7 @@ class UserViewClass(APIView):
             )
 
         try:
-            user = User.objects.get(id=id)
+            user = User.objects.get(id=id,is_deleted = False)
         except User.DoesNotExist:
             return Response(
                 {"success": False, "message": "User not found"},
@@ -262,7 +262,8 @@ class UserViewClass(APIView):
         # Delete user
         username = user.username
         try:
-            user.delete()
+            user.is_deleted = True
+            user.save()
         except Exception:
             return Response(
                 {"success": False, "message": "Cannot delete user."},

@@ -22,10 +22,10 @@ class CategoryViewClass(APIView):
         if id:
             try:
                 if role in ["SUPER_ADMIN", "ADMIN"]:
-                    category = ProductCategory.objects.get(id=id)
+                    category = ProductCategory.objects.get(id=id,is_deleted = False)
                 else:
                     category = ProductCategory.objects.get(
-                        id=id, branch=my_branch
+                        id=id, branch=my_branch,is_deleted = False
                     )
 
             except ProductCategory.DoesNotExist:
@@ -49,9 +49,9 @@ class CategoryViewClass(APIView):
             "KITCHEN",
         ]:
             if role in ["SUPER_ADMIN", "ADMIN"]:
-                categories = ProductCategory.objects.all()
+                categories = ProductCategory.objects.filter(is_deleted=False)
             else:
-                categories = ProductCategory.objects.filter(branch=my_branch)
+                categories = ProductCategory.objects.filter(branch=my_branch,is_deleted = False)
 
             serializer = ProductCategorySerializer(categories, many=True)
             return Response(
@@ -181,9 +181,9 @@ class CategoryViewClass(APIView):
         try:
             # Get category - SUPER_ADMIN can access any, others only their branch
             if role in ["SUPER_ADMIN", "ADMIN"]:
-                category = get_object_or_404(ProductCategory, id=id)
+                category = get_object_or_404(ProductCategory, id=id,is_deleted = False)
             else:
-                category = get_object_or_404(ProductCategory, id=id, branch=my_branch)
+                category = get_object_or_404(ProductCategory, id=id, branch=my_branch, is_deleted = False)
         except Exception as e:
             return Response(
                 {"success": False, "message": "Category not found"},
@@ -247,7 +247,8 @@ class CategoryViewClass(APIView):
                 
             if role in ["ADMIN", "SUPER_ADMIN", "BRANCH_MANAGER"]:
                 category = get_object_or_404(ProductCategory, **filter_kwargs)
-                category.delete()
+                category.is_deleted = True
+                category.save()
                 return Response(
                     {
                         "success": True,

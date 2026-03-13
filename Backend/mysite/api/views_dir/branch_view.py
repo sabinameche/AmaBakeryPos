@@ -25,7 +25,7 @@ class BranchViewClass(APIView):
         if id:
             # Single branch with prefetch
             try:
-                branch = Branch.objects.annotate(
+                branch = Branch.objects.filter(is_deleted = False).annotate(
                     revenue=Coalesce(Sum("invoices__total_amount"), Value(0, output_field=DecimalField()))
                 ).prefetch_related(
                     "branch_user"
@@ -63,7 +63,7 @@ class BranchViewClass(APIView):
             
         try:
             # All branches with prefetch and revenue annotation
-            branches = Branch.objects.annotate(
+            branches = Branch.objects.filter(is_deleted = False).annotate(
                 revenue=Coalesce(Sum("invoices__total_amount"), Value(0, output_field=DecimalField()))
             ).prefetch_related("branch_user").all()
         except Exception:
@@ -201,7 +201,7 @@ class BranchViewClass(APIView):
 
         #  Get branch safely
         try:
-            branch = Branch.objects.get(id=id)
+            branch = Branch.objects.get(id=id,is_deleted = False)
         except Branch.DoesNotExist:
             return Response(
                 {"success": False, "message": "Branch not found."},
@@ -354,7 +354,9 @@ class BranchViewClass(APIView):
         #  Safe delete
         branch_name = branch.name
         try:
-            branch.delete()
+            branch.is_deleted = True
+            branch.is_active = False
+            branch.save()
         except Exception:
             return Response(
                 {

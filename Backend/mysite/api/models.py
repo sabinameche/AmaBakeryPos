@@ -12,6 +12,8 @@ class Branch(models.Model):
     name = models.CharField(max_length=20, unique=True, null=True, blank=True)
     location = models.CharField(max_length=20)
     created_at = models.DateTimeField(default=timezone.now)
+    is_deleted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default= True)
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -21,6 +23,8 @@ class Branch(models.Model):
 class Kitchentype(models.Model):
     name = models.CharField(max_length=20)
     branch = models.ForeignKey(Branch,on_delete=models.CASCADE,related_name="kitchentype_branch")
+    is_deleted = models.BooleanField(default=False)
+
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -32,6 +36,8 @@ class ProductCategory(models.Model):
         Branch, on_delete=models.CASCADE, related_name="product_categories"
     )
     name = models.CharField(max_length=100)
+    is_deleted = models.BooleanField(default=False)
+
 
     class Meta:
         unique_together = ["branch", "name"]
@@ -51,6 +57,8 @@ class User(AbstractUser):
         blank=True,
     )
     kitchentype = models.ForeignKey(Kitchentype, on_delete=models.SET_NULL, blank=True, null=True, related_name="kitchen_users")
+    is_deleted = models.BooleanField(default=False)
+
 
     USER_TYPE_CHOICES = [
         ("ADMIN", "Admin"),
@@ -115,6 +123,8 @@ class Customer(models.Model):
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
+
     branch = models.ForeignKey(
         Branch,
         on_delete=models.PROTECT,
@@ -138,6 +148,8 @@ class Floor(models.Model):
     )
     name = models.CharField(max_length=25, blank=False)
     table_count = models.IntegerField(default=1)
+    is_deleted = models.BooleanField(default=False)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['name','branch'],name='unique_floor_per_branch')
@@ -223,6 +235,8 @@ class Invoice(models.Model):
     )
 
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
 
     class Meta:
         ordering = ["-created_at"]

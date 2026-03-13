@@ -5,6 +5,19 @@ from ..models import User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self,attrs):
+        data = super().validate(attrs)
+        
+        user = self.user
+        if user.is_deleted:
+            raise serializers.ValidationError("This account has been deleted.")
+        if user.user_type != "ADMIN":
+            branch = user.branch
+            if branch.is_active == False:
+                raise serializers.ValidationError("This branch is currently inactive")
+            return data
+        return data
+    
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)

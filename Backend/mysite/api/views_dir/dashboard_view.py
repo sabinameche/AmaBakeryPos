@@ -100,7 +100,7 @@ class DashboardViewClass(APIView):
         target_branch = None
         if branch_id:
             try:
-                target_branch = Branch.objects.get(id=branch_id)
+                target_branch = Branch.objects.get(id=branch_id,is_deleted = False)
             except Branch.DoesNotExist:
                 return Response({"success": False, "message": "Branch not found"}, status=status.HTTP_404_NOT_FOUND)
         elif role in ["BRANCH_MANAGER"] and my_branch:
@@ -129,6 +129,7 @@ class DashboardViewClass(APIView):
             User.objects.filter(branch=target_branch).count() 
             if target_branch else User.objects.all().count() - 1
         )
+        print(f"yaa aayo k tw {Branch.objects.filter(is_deleted = False).count()}")
 
         response_data = {
             **report_data,
@@ -145,14 +146,14 @@ class DashboardViewClass(APIView):
             "avg_order_percent": report_data["avg_order_percent"],
             "total_user": user_count,
             "total_user_count": user_count,
-            "total_branch": Branch.objects.all().count(),
-            "total_count_branch": Branch.objects.all().count(),
+            "total_branch": Branch.objects.filter(is_deleted = False).count(),
+            "total_count_branch": Branch.objects.filter(is_deleted = False).count(),
         }
 
         if not target_branch:
             # Add global-only fields
             response_data.update({
-                "top_perfomance_branch": list(Branch.objects.annotate(
+                "top_perfomance_branch": list(Branch.objects.filter(is_deleted = False).annotate(
                     total_sales_per_branch=Coalesce(
                         Sum("invoices__total_amount", filter=Q(invoices__created_at__date__gte=start_date, invoices__created_at__date__lte=end_date)),
                         Value(0.0, output_field=DecimalField())

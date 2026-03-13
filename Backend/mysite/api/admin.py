@@ -20,6 +20,7 @@ from .models import (
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = UserAdmin.list_display + (
+        "id",
         "phone",
         "full_name",
         "user_type",
@@ -41,6 +42,7 @@ class BranchAdmin(admin.ModelAdmin):
         "name",
         "location",
         "created_at",
+        "is_active"
     )
     list_filter = ("name", "id")
     search_fields = ("name", "name")

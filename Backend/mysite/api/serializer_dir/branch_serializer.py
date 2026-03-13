@@ -8,4 +8,4 @@ class BranchSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Branch
-        fields = ["id", "name", "location", "revenue"]
+        fields = ["id", "name", "location", "revenue","is_active"]

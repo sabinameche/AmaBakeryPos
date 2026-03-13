@@ -39,12 +39,12 @@ class InvoiceViewClass(APIView):
                 # Apply branch filter for non-admin users
                 if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
                     invoice = Invoice.objects.get(
-                        branch=my_branch, created_at__date=today_date, id=id
+                        branch=my_branch, created_at__date=today_date, id=id,is_deleted = False
                     )
                     serializer = InvoiceResponseSerializer(invoice)
                     return Response({"success": True, "data": serializer.data})
                 else:
-                    invoice = Invoice.objects.get(id=id)
+                    invoice = Invoice.objects.get(id=id,is_deleted = False)
                     serializer = InvoiceResponseSerializer(invoice)
                     return Response({"success": True, "data": serializer.data})
 
@@ -57,17 +57,17 @@ class InvoiceViewClass(APIView):
             # Base filtering
             if role in ["COUNTER", "WAITER", "KITCHEN"]:
                 invoices = Invoice.objects.filter(
-                    branch=my_branch, created_at__date=today_date
+                    branch=my_branch, created_at__date=today_date,is_deleted = False
                 ).exclude(payment_status__in=["CANCELLED"])
             elif role == "BRANCH_MANAGER":
-                invoices = Invoice.objects.filter(branch=my_branch)
+                invoices = Invoice.objects.filter(branch=my_branch,is_deleted = False)
             else:
-                invoices = Invoice.objects.all()
+                invoices = Invoice.objects.filter(is_deleted = False)
 
             # Filter by customer if provided
             customer_id = request.query_params.get("customer")
             if customer_id:
-                invoices = invoices.filter(customer_id=customer_id)
+                invoices = invoices.filter(customer_id=customer_id,is_deleted = False)
 
             invoices = invoices.order_by("-created_at")
             serializer = InvoiceResponseSerializer(invoices, many=True)
@@ -148,7 +148,7 @@ class InvoiceViewClass(APIView):
 
         try:
             # Apply branch filter for non-admin users
-            filter_kwargs = {"id": id}
+            filter_kwargs = {"id": id,"is_deleted" : False}
             if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
                 filter_kwargs["branch"] = my_branch.id
             invoice = Invoice.objects.get(**filter_kwargs)
@@ -247,7 +247,7 @@ class InvoiceViewClass(APIView):
 
         try:
             # Apply branch filter for non-admin users
-            filter_kwargs = {"id": id}
+            filter_kwargs = {"id": id,"is_deleted":False}
             if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
                 filter_kwargs["branch"] = my_branch
 
@@ -260,10 +260,11 @@ class InvoiceViewClass(APIView):
                     status=status.HTTP_400_BAD_REQUEST,  # ✅ Use status constants
                 )
 
-            invoice.delete()
+            invoice.is_deleted = True
+            invoice.save()
             return Response(
                 {"success": True, "message": "Invoice deleted"},
-                status=status.HTTP_204_NO_CONTENT,  # ✅ Use status constants
+                status=status.HTTP_200_OK,  # ✅ Use status constants
             )
 
         except Invoice.DoesNotExist:

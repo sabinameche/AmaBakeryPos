@@ -14,7 +14,7 @@ class KitchenViewClass(APIView):
         role = self.get_user_role(request.user)
 
         if id:
-            filter_kwargs = {"id": id}
+            filter_kwargs = {"id": id,"is_deleted":False}
             if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
                 filter_kwargs["branch"] = my_branch
             
@@ -23,9 +23,9 @@ class KitchenViewClass(APIView):
             return Response({"success": True, "data": serializer.data})
         else:
             if role in ["ADMIN", "SUPER_ADMIN"]:
-                kitchentypes = Kitchentype.objects.all()
+                kitchentypes = Kitchentype.objects.filter(is_deleted = False)
             elif my_branch:
-                kitchentypes = Kitchentype.objects.filter(branch=my_branch)
+                kitchentypes = Kitchentype.objects.filter(branch=my_branch,is_deleted = False)
             else:
                 kitchentypes = Kitchentype.objects.none()
             
@@ -52,7 +52,7 @@ class KitchenViewClass(APIView):
         my_branch = request.user.branch
         role = self.get_user_role(request.user)
 
-        filter_kwargs = {"id": id}
+        filter_kwargs = {"id": id,"is_deleted":False}
         if role not in ["ADMIN", "SUPER_ADMIN"] and my_branch:
             filter_kwargs["branch"] = my_branch
         
@@ -72,5 +72,8 @@ class KitchenViewClass(APIView):
             filter_kwargs["branch"] = my_branch
         
         kitchentype = get_object_or_404(Kitchentype, **filter_kwargs)
-        kitchentype.delete()
-        return Response({"success": True, "message": "Kitchen type deleted"}, status=status.HTTP_204_NO_CONTENT)
+        kitchentype.is_deleted = True
+        kitchentype.save()
+        return Response({"success": True,
+                          "message": "Kitchen type deleted"}, 
+                          status=status.HTTP_200_OK,)

@@ -29,7 +29,7 @@ class FloorViewClass(APIView):
 
         if floor_id:
             # Get single floor
-            floor = get_object_or_404(Floor, id=floor_id)
+            floor = get_object_or_404(Floor, id=floor_id,is_deleted = False)
             print(f"floor-> {floor}")
 
             if role in ["BRANCH_MANAGER", "COUNTER", "WAITER", "KITCHEN"]:
@@ -53,10 +53,10 @@ class FloorViewClass(APIView):
                         {"success": False, "message": "No branch assigned"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                floors = Floor.objects.filter(branch=my_branch)
+                floors = Floor.objects.filter(branch=my_branch,is_deleted = False)
             else:
                 # SUPER_ADMIN and ADMIN can see all floors
-                floors = Floor.objects.all()
+                floors = Floor.objects.filter(is_deleted = False)
 
             serializer = FloorSerializer(floors, many=True)
             return Response({"success": True, "data": serializer.data})
@@ -165,7 +165,7 @@ class FloorViewClass(APIView):
 
         # 2. Get the floor object
         try:
-            floor = Floor.objects.get(id=floor_id)
+            floor = Floor.objects.get(id=floor_id,is_deleted = False)
         except Floor.DoesNotExist:
             return Response(
                 {
@@ -303,7 +303,8 @@ class FloorViewClass(APIView):
 
         # 5. Perform deletion
         try:
-            floor.delete()
+            floor.is_deleted = True
+            floor.save()
             return Response(
                 {
                     "success": True,

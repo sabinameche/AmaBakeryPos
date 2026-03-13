@@ -26,7 +26,7 @@ class CustomerViewClass(APIView):
         # 2. Handle GET single customer (with ID)
         if id:
             try:
-                customer = Customer.objects.get(id=id)
+                customer = Customer.objects.get(id=id,is_deleted = False)
             except Customer.DoesNotExist:
                 return Response(
                     {"success": False, "message": "Customer not found"},
@@ -57,7 +57,7 @@ class CustomerViewClass(APIView):
         else:
             if role in ["SUPER_ADMIN", "ADMIN"]:
                 # SUPER_ADMIN and ADMIN see all customers
-                customers = Customer.objects.all()
+                customers = Customer.objects.filter(is_deleted = False)
 
             elif role in ["BRANCH_MANAGER", "WAITER", "COUNTER"]:
                 if not my_branch:
@@ -66,7 +66,7 @@ class CustomerViewClass(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 # Filter by user's branch
-                customers = Customer.objects.filter(branch=my_branch)
+                customers = Customer.objects.filter(branch=my_branch,is_deleted = False)
 
             else:
                 # Other roles (if any) get no customers
@@ -155,7 +155,7 @@ class CustomerViewClass(APIView):
 
         # Get customer
         try:
-            customer = Customer.objects.get(id=id)
+            customer = Customer.objects.get(id=id,is_deleted = False)
         except Customer.DoesNotExist:
             return Response(
                 {"success": False, "message": "Customer not found"},
@@ -252,7 +252,8 @@ class CustomerViewClass(APIView):
 
         # Delete customer
         customer_name = customer.name
-        customer.delete()
+        customer.is_deleted = True
+        customer.save()
 
         return Response(
             {
